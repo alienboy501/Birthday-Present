@@ -1,0 +1,371 @@
+/* =========================================================
+   REALISTIC MAGICAL TREE
+   ========================================================= */
+
+.tree-stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+
+  width: 620px;
+  height: 620px;
+
+  transform:
+    translate(-50%, -50%)
+    scale(1);
+
+  transform-origin: center bottom;
+
+  opacity: 0;
+
+  transition:
+    transform 1.8s cubic-bezier(.16,1,.3,1),
+    filter 1.8s ease,
+    opacity 1s ease;
+
+  pointer-events: none;
+}
+
+
+/* Soft canopy behind the leaves */
+
+.tree-stage::before {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 16%;
+
+  width: 440px;
+  height: 310px;
+
+  transform:
+    translateX(-50%);
+
+  border-radius:
+    48% 52% 45% 55%;
+
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(80,155,100,0.17),
+      transparent 70%
+    );
+
+  filter: blur(18px);
+
+  pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+   TRUNK
+   --------------------------------------------------------- */
+
+.tree-trunk {
+  position: absolute;
+
+  left: 50%;
+  bottom: 7%;
+
+  width: 44px;
+  height: 0;
+
+  transform:
+    translateX(-50%);
+
+  border-radius:
+    48% 52% 18% 18% /
+    20% 20% 10% 10%;
+
+  background:
+    linear-gradient(
+      90deg,
+      #321914 0%,
+      #59301f 20%,
+      #895033 45%,
+      #6a3925 68%,
+      #2d1712 100%
+    );
+
+  box-shadow:
+    inset 7px 0 10px
+      rgba(255,190,120,0.15),
+
+    inset -7px 0 12px
+      rgba(0,0,0,0.3),
+
+    0 0 18px
+      rgba(255,190,110,0.12);
+
+  opacity: 0;
+
+  transform-origin:
+    bottom center;
+
+  transition:
+    height 1.8s cubic-bezier(.16,1,.3,1),
+    opacity 0.9s ease;
+}
+
+
+/* Roots */
+
+.tree-trunk::before,
+.tree-trunk::after {
+  content: "";
+
+  position: absolute;
+
+  bottom: -5px;
+
+  width: 90px;
+  height: 18px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #563021
+    );
+
+  border-radius: 100%;
+
+  opacity: 0.8;
+}
+
+.tree-trunk::before {
+  right: 60%;
+  transform: rotate(12deg);
+}
+
+.tree-trunk::after {
+  left: 60%;
+  transform: rotate(-12deg);
+}
+
+
+/* ---------------------------------------------------------
+   BRANCHES
+   --------------------------------------------------------- */
+
+.branch {
+  position: absolute;
+
+  height:
+    var(--branch-height);
+
+  transform-origin:
+    bottom center;
+
+  border-radius:
+    999px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #2e1712,
+      #603321 40%,
+      #8b5031 65%,
+      #351a14
+    );
+
+  box-shadow:
+    inset 2px 0 4px
+      rgba(255,190,120,0.15),
+
+    0 0 7px
+      rgba(255,180,100,0.08);
+
+  opacity: 0;
+
+  transition:
+    opacity 0.8s ease,
+    filter 1s ease;
+}
+
+.branch.visible {
+  opacity: 1;
+}
+
+
+/* ---------------------------------------------------------
+   LEAVES
+   --------------------------------------------------------- */
+
+.leaf {
+  position: absolute;
+
+  border-radius:
+    100% 0 100% 0;
+
+  transform:
+    rotate(var(--leaf-rotate))
+    scale(0);
+
+  transform-origin:
+    center;
+
+  background:
+    radial-gradient(
+      circle at 28% 28%,
+      rgba(255,240,175,0.95),
+      rgba(120,185,105,0.95) 42%,
+      rgba(38,90,55,0.98) 100%
+    );
+
+  box-shadow:
+    0 0 6px
+      rgba(190,255,170,0.25);
+
+  opacity: 0;
+
+  transition:
+    transform 0.55s cubic-bezier(.16,1,.3,1),
+    opacity 0.55s ease;
+}
+
+.leaf.visible {
+  opacity: 0.92;
+
+  transform:
+    rotate(var(--leaf-rotate))
+    scale(1);
+}
+
+
+/* ---------------------------------------------------------
+   TREE PARTICLES
+   --------------------------------------------------------- */
+
+.tree-particle {
+  position: absolute;
+
+  width: 3px;
+  height: 3px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,245,190,1),
+      rgba(150,220,145,0.5),
+      transparent
+    );
+
+  box-shadow:
+    0 0 7px
+      rgba(220,255,180,0.6);
+
+  animation:
+    treeParticleRise
+    5s ease-in-out infinite;
+
+  pointer-events: none;
+}
+
+@keyframes treeParticleRise {
+
+  0% {
+    opacity: 0;
+    transform:
+      translate3d(0,0,0)
+      scale(0.6);
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate3d(var(--dx),var(--dy),0)
+      scale(1.3);
+  }
+}
+
+
+/* ---------------------------------------------------------
+   TREE AURA
+   --------------------------------------------------------- */
+
+.tree-aura {
+  position: absolute;
+
+  left: 50%;
+  top: 48%;
+
+  width: 470px;
+  height: 470px;
+
+  transform:
+    translate(-50%,-50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(120,210,130,0.14),
+      rgba(255,205,110,0.08) 42%,
+      transparent 72%
+    );
+
+  filter: blur(22px);
+
+  opacity: 0;
+
+  transition:
+    opacity 1.5s ease;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+   --------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  .tree-stage {
+    width: 420px;
+    height: 500px;
+  }
+
+  .tree-stage::before {
+    width: 330px;
+    height: 240px;
+  }
+
+  .tree-aura {
+    width: 340px;
+    height: 340px;
+  }
+
+  .leaf:nth-child(n + 140) {
+    display: none;
+  }
+
+  .tree-particle:nth-child(n + 22) {
+    display: none;
+  }
+}
+
+
+/* ---------------------------------------------------------
+   REDUCED MOTION
+   --------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .tree-stage,
+  .tree-trunk,
+  .branch,
+  .leaf,
+  .tree-particle {
+    animation: none !important;
+    transition: none !important;
+  }
+}
