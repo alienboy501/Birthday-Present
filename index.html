@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +14,10 @@
   >
 
   <title>Happy Birthday ❤️</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" media="print" onload="this.media='all'">
 
   <link rel="stylesheet" href="Birth.css">
 </head>
@@ -40,23 +43,19 @@
       <div class="birthday-content">
 
         <p class="eyebrow">
-          ✨ A little surprise for you ✨
+          Hey... I have something special for you 💫
         </p>
 
         <h1>
-          Happy Birthday
+          Are you ready?
         </h1>
-
-        <p class="birthday-message">
-          Today is all about celebrating you.
-        </p>
 
         <button
           id="startButton"
           class="start-button"
           type="button"
         >
-          Open Your Surprise ❤️
+          Begin the journey ✨
         </button>
 
       </div>
@@ -64,26 +63,7 @@
     </section>
 
 
-    <!-- ===================================================
-         MAGICAL TREE
-         =================================================== -->
-
-    <section
-      class="tree-stage"
-      id="treeStage"
-      aria-hidden="true"
-    >
-
-      <div class="tree-trunk"></div>
-
-      <div class="tree-branches"></div>
-
-      <div class="tree-leaves"></div>
-
-      <div class="tree-particles"></div>
-
-    </section>
-
+    
 
     <!-- ===================================================
          HEART EFFECTS
@@ -93,13 +73,18 @@
       id="heartOrbit"
       class="heart-orbit"
       aria-hidden="true"
-    ></div>
+    >
+      <div class="heart-shell" aria-hidden="true"></div>
+      <div class="heart-sparks" aria-hidden="true"></div>
+    </div>
 
     <div
       id="heartRise"
       class="heart-rise"
       aria-hidden="true"
     ></div>
+
+    <div class="center-beacon" aria-hidden="true"></div>
 
 
     <!-- ===================================================
@@ -172,6 +157,76 @@
          FINAL MESSAGE
          =================================================== -->
 
+    <!-- ===================================================
+         MESSAGE SCENE - Magical Night
+         =================================================== -->
+    <section
+      id="messageScene"
+      class="message-scene"
+      aria-hidden="true"
+    >
+      <div class="message-content">
+        <p class="message-line" id="messageLine1" aria-live="polite">
+          Every special person deserves a special surprise... ❤️
+        </p>
+        <p class="message-line" id="messageLine2" aria-live="polite">
+          And this one is just for you.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         LETTER SCENE
+         =================================================== -->
+    <section
+      id="letterScene"
+      class="letter-scene"
+      aria-hidden="true"
+    >
+      <div class="letter-content">
+        <p class="letter-line" id="letterLine1" aria-live="polite">
+          Before the celebration begins...
+        </p>
+        <p class="letter-line" id="letterLine2" aria-live="polite">
+          There's something I want you to read. 💌
+        </p>
+
+        <div class="envelope-wrapper">
+          <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open your letter">
+            <div class="envelope-back"></div>
+            <div class="envelope-front">
+              <div class="envelope-flap"></div>
+              <div class="envelope-seal">
+                <div class="seal-heart">💖</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="letter-prompt" id="letterPrompt">
+          Open your letter ✨
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         LETTER CONTENT SCENE
+         =================================================== -->
+    <section
+      id="letterContentScene"
+      class="letter-content-scene"
+      aria-hidden="true"
+    >
+      <div class="letter-paper" id="letterPaper">
+        <div class="letter-inner">
+          <p class="letter-text" id="letterText"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================
+         FINAL MESSAGE
+         =================================================== -->
     <section
       id="finalMessage"
       class="final-message"
@@ -197,4 +252,3 @@
 
 </body>
 </html>
-```

@@ -7,16 +7,14 @@ const PERFORMANCE = {
   dust: 70,
   heartOrbit: 38,
   heartRise: 28,
-  leaves: 220,
-  treeParticles: 45,
-  heartPoints: 110,
   spiralPetals: 110,
   fireworks: 6,
   lanterns: 10,
   butterflies: 8,
   blossoms: 14,
   balloons: 6,
-  confetti: 24
+  confetti: 24,
+  ambientSparkles: 12
 };
 
 const isLowPower =
@@ -28,26 +26,328 @@ if (isLowPower) {
   PERFORMANCE.dust = 45;
   PERFORMANCE.heartOrbit = 28;
   PERFORMANCE.heartRise = 20;
-  PERFORMANCE.leaves = 160;
-  PERFORMANCE.treeParticles = 30;
-  PERFORMANCE.heartPoints = 90;
   PERFORMANCE.spiralPetals = 90;
+  PERFORMANCE.ambientSparkles = 8;
+}
+
+/* =========================================================
+   PERFORMANCE MONITORING & ADAPTIVE QUALITY
+========================================================= */
+
+// FPS monitoring
+let fpsHistory = [];
+let lastFrameTime = performance.now();
+let currentQualityLevel = isLowPower ? 1 : 0; // 0 = high, 1 = medium, 2 = low
+let performanceMonitoringActive = false;
+
+// Object pools for particle reuse
+const particlePools = {
+  spark: [],
+  firefly: [],
+  firework: [],
+  lantern: [],
+  butterfly: [],
+  blossom: [],
+  balloon: [],
+  confetti: [],
+  ambientSparkle: []
+};
+
+const MAX_POOL_SIZE = 50;
+
+function initPerformanceMonitoring() {
+  if (performanceMonitoringActive) return;
+  performanceMonitoringActive = true;
+
+  // FPS monitoring loop
+  function measureFPS(now) {
+    const delta = now - lastFrameTime;
+    const fps = 1000 / delta;
+    fpsHistory.push(fps);
+    if (fpsHistory.length > 60) fpsHistory.shift(); // Keep last 60 frames
+
+    // Check FPS every 2 seconds
+    if (fpsHistory.length >= 120) {
+      const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+      adaptQuality(avgFps);
+    }
+
+    lastFrameTime = now;
+    if (performanceMonitoringActive) {
+      requestAnimationFrame(measureFPS);
+    }
+  }
+
+  requestAnimationFrame(measureFPS);
+}
+
+function adaptQuality(avgFps) {
+  // Target 55+ FPS on modern, 30+ on low-end
+  const targetFps = isLowPower ? 30 : 55;
+
+  if (avgFps < targetFps * 0.8 && currentQualityLevel < 2) {
+    // Performance degrading - reduce quality
+    currentQualityLevel++;
+    applyQualityLevel(currentQualityLevel);
+    console.log(`Performance: Reducing quality to level ${currentQualityLevel} (avg FPS: ${avgFps.toFixed(1)})`);
+  } else if (avgFps > targetFps * 1.1 && currentQualityLevel > 0) {
+    // Performance good - can increase quality
+    currentQualityLevel--;
+    applyQualityLevel(currentQualityLevel);
+    console.log(`Performance: Increasing quality to level ${currentQualityLevel} (avg FPS: ${avgFps.toFixed(1)})`);
+  }
+}
+
+function applyQualityLevel(level) {
+  const multipliers = {
+    0: { stars: 1.0, dust: 1.0, particles: 1.0, celebration: 1.0, ambient: 1.0 },
+    1: { stars: 0.7, dust: 0.6, particles: 0.7, celebration: 0.7, ambient: 0.6 },
+    2: { stars: 0.4, dust: 0.4, particles: 0.5, celebration: 0.5, ambient: 0.4 }
+  };
+
+  const m = multipliers[level];
+
+  // Apply multipliers to PERFORMANCE settings (using base values)
+  PERFORMANCE.stars = Math.round(70 * m.stars);
+  PERFORMANCE.dust = Math.round(70 * m.dust);
+  PERFORMANCE.heartOrbit = Math.round(38 * m.particles);
+  PERFORMANCE.heartRise = Math.round(28 * m.particles);
+  PERFORMANCE.spiralPetals = Math.round(110 * m.particles);
+  PERFORMANCE.fireworks = Math.round(6 * m.celebration);
+  PERFORMANCE.lanterns = Math.round(10 * m.celebration);
+  PERFORMANCE.butterflies = Math.round(8 * m.celebration);
+  PERFORMANCE.blossoms = Math.round(14 * m.celebration);
+  PERFORMANCE.balloons = Math.round(6 * m.celebration);
+  PERFORMANCE.confetti = Math.round(24 * m.celebration);
+  PERFORMANCE.ambientSparkles = Math.round(12 * m.ambient);
+
+  // If already started, we could dynamically remove excess particles
+  // For now, this affects future particle creation
+}
+
+function stopPerformanceMonitoring() {
+  performanceMonitoringActive = false;
+}
+
+// Object pool functions
+function createParticle(className) {
+  const el = document.createElement('span');
+  el.className = className;
+  return el;
+}
+
+function getPooledElement(type, className, createFn) {
+  const pool = particlePools[type];
+  if (pool.length > 0) {
+    const el = pool.pop();
+    el.style.opacity = '';
+    el.style.transform = '';
+    el.style.display = '';
+    el.className = className; // Reset class in case it changed
+    return el;
+  }
+  return createFn();
+}
+
+function returnToPool(type, element) {
+  if (particlePools[type].length < MAX_POOL_SIZE) {
+    element.style.display = 'none';
+    element.style.opacity = '';
+    element.style.transform = '';
+    particlePools[type].push(element);
+  }
 }
 
 
 /* =========================================================
-   STARS
+   DOM REFERENCES
+========================================================= */
+
+const starsLayer = document.getElementById('stars');
+const dustLayer = document.getElementById('dust');
+const heartOrbit = document.getElementById('heartOrbit');
+const finalMessage = document.getElementById('finalMessage');
+const startButton = document.getElementById('startButton');
+const birthdayScreen = document.getElementById('birthdayScreen');
+const messageScene = document.getElementById('messageScene');
+const messageLine1 = document.getElementById('messageLine1');
+const messageLine2 = document.getElementById('messageLine2');
+const letterScene = document.getElementById('letterScene');
+const letterLine1 = document.getElementById('letterLine1');
+const letterLine2 = document.getElementById('letterLine2');
+const envelope = document.getElementById('envelope');
+const letterPrompt = document.getElementById('letterPrompt');
+const letterContentScene = document.getElementById('letterContentScene');
+const letterPaper = document.getElementById('letterPaper');
+const letterText = document.getElementById('letterText');
+
+// Wrapper elements for effects that need containers
+const heartStage = heartOrbit; // Use heartOrbit as heartStage
+const heartShell = document.querySelector('.heart-shell') || document.createElement('div');
+const heartSparks = document.querySelector('.heart-sparks') || document.createElement('div');
+const celebrationLayer = document.body;
+const scene = document.querySelector('.birthday-container') || document.body;
+const centerBeacon = document.querySelector('.center-beacon') || document.createElement('div');
+
+// Cache for frequently queried DOM elements to avoid repeated querySelectorAll calls
+let cachedStars = null;
+let cachedFinalMessage = null;
+
+function getStars() {
+  if (!cachedStars) {
+    cachedStars = document.querySelectorAll('.star');
+  }
+  return cachedStars;
+}
+
+function getFinalMessage() {
+  if (!cachedFinalMessage) {
+    cachedFinalMessage = document.getElementById('finalMessage');
+  }
+  return cachedFinalMessage;
+}
+
+/* =========================================================
+   START BUTTON HANDLER
+   ========================================================= */
+
+function startCelebration() {
+  if (!startButton) return;
+
+  startButton.disabled = true;
+  startButton.style.opacity = '0';
+  startButton.style.pointerEvents = 'none';
+
+  if (birthdayScreen) {
+    // Add fade-out class for smooth cinematic transition
+    birthdayScreen.classList.add('fade-out');
+  }
+
+  // Initialize performance monitoring
+  initPerformanceMonitoring();
+
+  // Wait for fade-out animation to complete, then start main sequence
+  trackTimeout(() => {
+    beginMainSequence();
+  }, 1000); // Match the CSS transition duration
+}
+
+if (startButton) {
+  startButton.addEventListener('click', startCelebration);
+}
+
+/* =========================================================
+   MAIN SEQUENCE (extracted from startup setTimeout)
+   ========================================================= */
+
+function beginMainSequence() {
+
+  scene.classList.add('ready');
+
+  const stars = Array.from(getStars());
+
+  stars.forEach((star, index) => {
+
+    trackTimeout(() => {
+
+      star.classList.add('visible');
+
+    }, 700 + index * 20);
+
+  });
+
+
+  trackTimeout(() => {
+
+    centerBeacon.classList.add('visible');
+
+  }, 1800);
+
+
+  trackTimeout(() => {
+
+    heartStage.classList.add('revealed');
+
+    heartShell.style.opacity =
+      '1';
+
+  }, 4000);
+
+
+  // Heartbeat
+
+  trackTimeout(() => {
+
+    triggerHeartbeat();
+
+    heartbeatLoop =
+      trackInterval(
+        triggerHeartbeat,
+        5200
+      );
+
+  }, 6500);
+
+
+  // Begin transformation
+
+  trackTimeout(() => {
+
+    clearInterval(heartbeatLoop);
+
+    heartStage.classList.add('quiet');
+
+    centerBeacon.style.opacity =
+      '0.64';
+
+
+    trackTimeout(() => {
+
+      launchTransformationPulse();
+
+    }, 900);
+
+
+    trackTimeout(() => {
+
+      heartStage.style.filter =
+        'drop-shadow(0 0 30px rgba(255,175,197,0.55))';
+
+      heartShell.style.transform =
+        'translate(-50%, -50%) scale(0.9)';
+
+    }, 2400);
+
+
+    // Ambient sparkles
+    trackTimeout(() => {
+      createAmbientSparkles();
+    }, 5000);
+
+
+    // Show message scene - transition from heart scene to magical night message
+
+    trackTimeout(() => {
+      showMessageScene();
+    }, 8000);
+
+  }, 15000);
+
+}
+
+/* =========================================================
+   STARS - Dark Night Theme
    ========================================================= */
 
 function createStars() {
   const fragment = document.createDocumentFragment();
 
   const starStyles = [
-    { size: 1.6, bloom: true },
-    { size: 1.1, bloom: false },
-    { size: 2.0, bloom: true },
-    { size: 0.8, bloom: false },
-    { size: 1.4, bloom: false }
+    { size: 1.6, bloom: true, cool: false },
+    { size: 1.1, bloom: false, cool: true },
+    { size: 2.0, bloom: true, cool: false },
+    { size: 0.8, bloom: false, cool: true },
+    { size: 1.4, bloom: false, cool: false }
   ];
 
   for (let i = 0; i < PERFORMANCE.stars; i++) {
@@ -58,7 +358,7 @@ function createStars() {
       style.size * (Math.random() * 0.8 + 0.6);
 
     star.className =
-      `star ${style.bloom ? 'bloom' : ''}`;
+      `star ${style.bloom ? 'bloom' : ''} ${style.cool ? 'cool' : 'warm'}`;
 
     star.style.width = `${size}px`;
     star.style.height = `${size}px`;
@@ -72,13 +372,13 @@ function createStars() {
     star.style.opacity = '0';
 
     const flicker =
-      2.5 + Math.random() * 3;
+      3.0 + Math.random() * 3.5;
 
     star.style.animation =
       `twinkle ${flicker}s ease-in-out infinite alternate`;
 
     star.style.animationDelay =
-      `${Math.random() * 2}s`;
+      `${Math.random() * 2.5}s`;
 
     fragment.appendChild(star);
   }
@@ -88,7 +388,7 @@ function createStars() {
 
 
 /* =========================================================
-   DUST
+   DUST - Dark Night Theme
    ========================================================= */
 
 function createDust() {
@@ -98,9 +398,10 @@ function createDust() {
     const dust = document.createElement('span');
 
     const near = Math.random() > 0.82;
+    const isCool = Math.random() > 0.6; // 40% warm, 60% cool
 
     dust.className =
-      `dust ${near ? 'near' : ''}`;
+      `dust ${near ? 'near' : ''} ${isCool ? 'cool' : ''}`;
 
     dust.style.left =
       `${Math.random() * 100}%`;
@@ -125,11 +426,11 @@ function createDust() {
 
     dust.style.setProperty(
       '--dur',
-      `${Math.random() * 10 + 12}s`
+      `${Math.random() * 12 + 15}s`
     );
 
     dust.style.animationDelay =
-      `${Math.random() * 5}s`;
+      `${Math.random() * 6}s`;
 
     fragment.appendChild(dust);
   }
@@ -235,12 +536,12 @@ function createHeartParticles() {
 
 function createSparkBurst() {
   const sparkCount = 10;
+  const fragment = document.createDocumentFragment();
+  const sparks = [];
 
   for (let i = 0; i < sparkCount; i++) {
-    const spark =
-      document.createElement('span');
-
-    spark.className = 'spark';
+    // Reuse from object pool if available
+    const spark = particlePools.spark.pop() || createParticle('spark');
 
     spark.style.setProperty(
       '--sx',
@@ -255,243 +556,27 @@ function createSparkBurst() {
     spark.style.animationDelay =
       `${Math.random() * 0.6}s`;
 
-    heartSparks.appendChild(spark);
+    sparks.push(spark);
+    fragment.appendChild(spark);
+  }
 
-    setTimeout(() => {
+  heartSparks.appendChild(fragment);
+
+  trackTimeout(() => {
+    for (const spark of sparks) {
       spark.remove();
-    }, 2000);
-  }
-}
-
-
-/* =========================================================
-   REALISTIC TREE BRANCHES
-   ========================================================= */
-
-function spawnTreeBranches() {
-
-  const branchData = [
-
-    // Main trunk branches
-    { angle: -52, height: 125, width: 10, offset: -55, bottom: 155 },
-    { angle: -38, height: 150, width: 11, offset: -30, bottom: 175 },
-    { angle: -22, height: 170, width: 12, offset: -10, bottom: 190 },
-    { angle: -8,  height: 185, width: 13, offset: 0,   bottom: 200 },
-
-    { angle: 10, height: 175, width: 12, offset: 15, bottom: 195 },
-    { angle: 25, height: 155, width: 11, offset: 35, bottom: 180 },
-    { angle: 42, height: 130, width: 10, offset: 60, bottom: 160 },
-
-    // Lower branches
-    { angle: -65, height: 95, width: 7, offset: -75, bottom: 145 },
-    { angle: -45, height: 110, width: 7, offset: -105, bottom: 125 },
-    { angle: -28, height: 105, width: 7, offset: -125, bottom: 115 },
-
-    { angle: 62, height: 95, width: 7, offset: 78, bottom: 145 },
-    { angle: 45, height: 110, width: 7, offset: 105, bottom: 125 },
-    { angle: 28, height: 105, width: 7, offset: 125, bottom: 115 },
-
-    // Upper branches
-    { angle: -35, height: 105, width: 6, offset: -42, bottom: 245 },
-    { angle: -18, height: 120, width: 6, offset: -20, bottom: 255 },
-    { angle: 18, height: 120, width: 6, offset: 22, bottom: 255 },
-    { angle: 35, height: 105, width: 6, offset: 45, bottom: 245 }
-  ];
-
-  branchData.forEach((branch, index) => {
-
-    const branchEl =
-      document.createElement('span');
-
-    branchEl.className = 'branch';
-
-    branchEl.style.left =
-      `${50 + branch.offset * 0.22}%`;
-
-    branchEl.style.bottom =
-      `${branch.bottom}px`;
-
-    branchEl.style.width =
-      `${branch.width}px`;
-
-    branchEl.style.setProperty(
-      '--branch-height',
-      `${branch.height}px`
-    );
-
-    branchEl.style.transform =
-      `translateX(-50%) rotate(${branch.angle}deg)`;
-
-    branchLayer.appendChild(branchEl);
-
-    setTimeout(() => {
-      branchEl.classList.add('visible');
-    }, 700 + index * 180);
-  });
-}
-
-
-/* =========================================================
-   REALISTIC TREE LEAVES
-   ========================================================= */
-
-function spawnLeaves() {
-
-  for (let i = 0; i < PERFORMANCE.leaves; i++) {
-
-    const leaf =
-      document.createElement('span');
-
-    leaf.className = 'leaf';
-
-    /*
-      The tree crown is:
-      - narrower at the top
-      - widest around the middle
-      - narrower near the bottom
-    */
-
-    const y =
-      16 + Math.random() * 55;
-
-    const normalizedY =
-      (y - 16) / 55;
-
-    const crownWidth =
-      35 +
-      Math.sin(normalizedY * Math.PI) * 70;
-
-    const x =
-      50 +
-      (Math.random() - 0.5) * crownWidth;
-
-    const size =
-      7 + Math.random() * 10;
-
-    leaf.style.left =
-      `${x}%`;
-
-    leaf.style.top =
-      `${y}%`;
-
-    leaf.style.width =
-      `${size}px`;
-
-    leaf.style.height =
-      `${size * 0.72}px`;
-
-    leaf.style.setProperty(
-      '--leaf-rotate',
-      `${Math.random() * 100 - 50}deg`
-    );
-
-    leafLayer.appendChild(leaf);
-
-    setTimeout(() => {
-      leaf.classList.add('visible');
-    }, 900 + i * 7);
-  }
-}
-
-
-/* =========================================================
-   TREE PARTICLES
-   ========================================================= */
-
-function spawnTreeParticles() {
-
-  for (
-    let i = 0;
-    i < PERFORMANCE.treeParticles;
-    i++
-  ) {
-
-    const particle =
-      document.createElement('span');
-
-    particle.className =
-      'tree-particle';
-
-    particle.style.left =
-      `${50 + (Math.random() - 0.5) * 34}%`;
-
-    particle.style.top =
-      `${50 + (Math.random() - 0.5) * 34}%`;
-
-    particle.style.setProperty(
-      '--dx',
-      `${(Math.random() - 0.5) * 150}px`
-    );
-
-    particle.style.setProperty(
-      '--dy',
-      `${-Math.random() * 170 - 20}px`
-    );
-
-    particle.style.animationDelay =
-      `${Math.random() * 4}s`;
-
-    treeParticleLayer.appendChild(particle);
-  }
-}
-
-
-/* =========================================================
-   TREE TRANSFORMATION
-   ========================================================= */
-
-function beginTreeTransformation() {
-
-  treeStage.classList.add('ready');
-
-  treeStage.style.opacity = '1';
-
-  heartStage.classList.add('transforming');
-
-  heartShell.style.top = '36%';
-
-  heartShell.style.transform =
-    'translate(-50%, -50%) scale(0.7)';
-
-  heartShell.style.filter =
-    'drop-shadow(0 0 24px rgba(255,196,226,0.7))';
-
-  // Grow trunk
-  setTimeout(() => {
-
-    treeTrunk.style.height =
-      '190px';
-
-    treeTrunk.style.opacity =
-      '1';
-
-  }, 450);
-
-  // Grow branches
-  setTimeout(() => {
-    spawnTreeBranches();
-  }, 1500);
-
-  // Grow leaves
-  setTimeout(() => {
-
-    spawnLeaves();
-    spawnTreeParticles();
-
-  }, 3200);
-
-  // Activate aura
-  setTimeout(() => {
-
-    const glow =
-      document.querySelector('.tree-aura');
-
-    if (glow) {
-      glow.style.opacity = '1';
+      if (particlePools.spark.length < MAX_POOL_SIZE) {
+        particlePools.spark.push(spark);
+      }
     }
-
-  }, 2200);
+  }, 2000);
 }
+
+
+
+
+
+
 
 
 /* =========================================================
@@ -509,6 +594,9 @@ function createHeartPetalSpiral() {
   celebrationLayer.appendChild(spiral);
 
   spiral.style.opacity = '1';
+
+  // Use document fragment for efficient DOM insertion
+  const fragment = document.createDocumentFragment();
 
   for (
     let i = 0;
@@ -561,14 +649,16 @@ function createHeartPetalSpiral() {
     petal.style.animationDelay =
       `${i * 0.02}s`;
 
-    spiral.appendChild(petal);
+    fragment.appendChild(petal);
   }
 
-  setTimeout(() => {
+  spiral.appendChild(fragment);
+
+  trackTimeout(() => {
 
     spiral.style.opacity = '0';
 
-    setTimeout(() => {
+    trackTimeout(() => {
       spiral.remove();
     }, 1400);
 
@@ -608,8 +698,19 @@ function launchCelebration() {
     'wing'
   ];
 
+  // Natural timing function variants
+  const timingFunctions = [
+    'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    'cubic-bezier(0.42, 0, 0.58, 1)',
+    'cubic-bezier(0.16, 1, 0.3, 1)',
+    'cubic-bezier(0.4, 0, 0.2, 1)'
+  ];
 
-  // Fireworks
+  // Use document fragment for efficient DOM insertion
+  const fragment = document.createDocumentFragment();
+
+
+  // Fireworks - stagger delays more (0-2s), vary burst sizes
 
   for (
     let i = 0;
@@ -617,11 +718,7 @@ function launchCelebration() {
     i++
   ) {
 
-    const firework =
-      document.createElement('span');
-
-    firework.className =
-      `firework ${variants[i % variants.length]}`;
+    const firework = getPooledElement('firework', `firework ${variants[i % variants.length]}`, createParticle);
 
     firework.style.left =
       `${18 + Math.random() * 64}%`;
@@ -629,18 +726,24 @@ function launchCelebration() {
     firework.style.top =
       `${12 + Math.random() * 28}%`;
 
+    // Stagger delays more (0-2s) for natural cascade
     firework.style.animationDelay =
-      `${Math.random() * 0.9}s`;
+      `${Math.random() * 2}s`;
 
-    celebrationLayer.appendChild(firework);
+    // Vary firework scale for different burst sizes
+    const scale = 0.7 + Math.random() * 0.6; // 0.7-1.3
+    firework.style.setProperty('--scale', scale.toFixed(2));
 
-    setTimeout(() => {
+    fragment.appendChild(firework);
+
+    trackTimeout(() => {
       firework.remove();
+      returnToPool('firework', firework);
     }, 5000);
   }
 
 
-  // Lanterns
+  // Lanterns - add subtle horizontal drift variance
 
   for (
     let i = 0;
@@ -648,11 +751,7 @@ function launchCelebration() {
     i++
   ) {
 
-    const lantern =
-      document.createElement('span');
-
-    lantern.className =
-      'lantern';
+    const lantern = getPooledElement('lantern', 'lantern', createParticle);
 
     lantern.style.left =
       `${Math.random() * 92}%`;
@@ -660,23 +759,35 @@ function launchCelebration() {
     lantern.style.top =
       `${85 + Math.random() * 6}%`;
 
+    // More organic horizontal drift
     lantern.style.setProperty(
       '--dx',
-      `${(Math.random() - 0.5) * 110}px`
+      `${(Math.random() - 0.5) * 140}px`
     );
 
+    // Add subtle vertical sway variance
+    const dyVariance = -Math.random() * 80 - 20;
+    lantern.style.setProperty('--dy', `${dyVariance}px`);
+
     lantern.style.animationDelay =
-      `${Math.random() * 0.3}s`;
+      `${Math.random() * 0.5}s`;
 
-    celebrationLayer.appendChild(lantern);
+    // Vary animation duration and timing function for natural drift
+    const animDuration = 12 + Math.random() * 4; // 12-16s
+    lantern.style.setProperty('--dur', `${animDuration}s`);
+    const timingFn = timingFunctions[Math.floor(Math.random() * timingFunctions.length)];
+    lantern.style.setProperty('--timing-fn', timingFn);
 
-    setTimeout(() => {
+    fragment.appendChild(lantern);
+
+    trackTimeout(() => {
       lantern.remove();
+      returnToPool('lantern', lantern);
     }, 9000);
   }
 
 
-  // Butterflies
+  // Butterflies - vary wing-beat frequency via animation-duration (3.5-5s)
 
   for (
     let i = 0;
@@ -684,11 +795,7 @@ function launchCelebration() {
     i++
   ) {
 
-    const butterfly =
-      document.createElement('span');
-
-    butterfly.className =
-      'butterfly';
+    const butterfly = getPooledElement('butterfly', 'butterfly', createParticle);
 
     butterfly.style.left =
       `${10 + Math.random() * 80}%`;
@@ -698,26 +805,33 @@ function launchCelebration() {
 
     butterfly.style.setProperty(
       '--dx',
-      `${(Math.random() - 0.5) * 150}px`
+      `${(Math.random() - 0.5) * 180}px`
     );
 
     butterfly.style.setProperty(
       '--dy',
-      `${(Math.random() - 0.5) * 150}px`
+      `${(Math.random() - 0.5) * 180}px`
     );
 
     butterfly.style.animationDelay =
       `${Math.random() * 4}s`;
 
-    celebrationLayer.appendChild(butterfly);
+    // Vary wing-beat frequency: 3.5-5s for more natural flutter
+    const wingBeatDur = 3.5 + Math.random() * 1.5;
+    butterfly.style.setProperty('--flap-dur', `${wingBeatDur}s`);
+    const timingFn = timingFunctions[Math.floor(Math.random() * timingFunctions.length)];
+    butterfly.style.setProperty('--timing-fn', timingFn);
 
-    setTimeout(() => {
+    fragment.appendChild(butterfly);
+
+    trackTimeout(() => {
       butterfly.remove();
+      returnToPool('butterfly', butterfly);
     }, 9000);
   }
 
 
-  // Blossom petals
+  // Blossom petals - add slight rotation during fall
 
   for (
     let i = 0;
@@ -725,11 +839,7 @@ function launchCelebration() {
     i++
   ) {
 
-    const petal =
-      document.createElement('span');
-
-    petal.className =
-      'blossom-petal';
+    const petal = getPooledElement('blossom', 'blossom-petal', createParticle);
 
     petal.style.left =
       `${Math.random() * 94}%`;
@@ -742,18 +852,27 @@ function launchCelebration() {
       `${(Math.random() - 0.5) * 170}px`
     );
 
+    // Add rotation during fall for natural petal drift
+    const rotation = (Math.random() - 0.5) * 720; // -360 to 360 degrees
+    petal.style.setProperty('--rotate', `${rotation}deg`);
+
     petal.style.animationDelay =
-      `${Math.random() * 2.8}s`;
+      `${Math.random() * 3}s`;
 
-    celebrationLayer.appendChild(petal);
+    // Vary fall duration
+    const fallDur = 5 + Math.random() * 3; // 5-8s
+    petal.style.setProperty('--fall-dur', `${fallDur}s`);
 
-    setTimeout(() => {
+    fragment.appendChild(petal);
+
+    trackTimeout(() => {
       petal.remove();
+      returnToPool('blossom', petal);
     }, 7000);
   }
 
 
-  // Balloons
+  // Balloons - more varied float paths
 
   for (
     let i = 0;
@@ -761,11 +880,7 @@ function launchCelebration() {
     i++
   ) {
 
-    const balloon =
-      document.createElement('span');
-
-    balloon.className =
-      'balloon';
+    const balloon = getPooledElement('balloon', 'balloon', createParticle);
 
     balloon.style.left =
       `${Math.random() * 86}%`;
@@ -775,21 +890,36 @@ function launchCelebration() {
 
     balloon.style.setProperty(
       '--dx',
-      `${(Math.random() - 0.5) * 220}px`
+      `${(Math.random() - 0.5) * 260}px`
     );
 
+    // Add vertical drift variance
+    const dyVariance = -Math.random() * 300 - 100;
+    balloon.style.setProperty('--dy', `${dyVariance}px`);
+
     balloon.style.animationDelay =
-      `${Math.random() * 0.8}s`;
+      `${Math.random() * 1}s`;
 
-    celebrationLayer.appendChild(balloon);
+    // Vary balloon float duration and path
+    const floatDur = 14 + Math.random() * 6; // 14-20s
+    balloon.style.setProperty('--float-dur', `${floatDur}s`);
+    const timingFn = timingFunctions[Math.floor(Math.random() * timingFunctions.length)];
+    balloon.style.setProperty('--timing-fn', timingFn);
 
-    setTimeout(() => {
+    // Random balloon color variant
+    const colorVariants = ['', 'pink', 'gold', 'lavender', 'mint'];
+    balloon.classList.add(colorVariants[Math.floor(Math.random() * colorVariants.length)]);
+
+    fragment.appendChild(balloon);
+
+    trackTimeout(() => {
       balloon.remove();
+      returnToPool('balloon', balloon);
     }, 10000);
   }
 
 
-  // Confetti
+  // Confetti - varied rotation speeds
 
   for (
     let i = 0;
@@ -797,32 +927,42 @@ function launchCelebration() {
     i++
   ) {
 
-    const confetti =
-      document.createElement('span');
+    const confettiEl = getPooledElement('confetti', 'confetti', createParticle);
 
-    confetti.className =
-      'confetti';
-
-    confetti.style.left =
+    confettiEl.style.left =
       `${Math.random() * 92}%`;
 
-    confetti.style.top =
+    confettiEl.style.top =
       `${Math.random() * 28}%`;
 
-    confetti.style.setProperty(
+    confettiEl.style.setProperty(
       '--dx',
       `${(Math.random() - 0.5) * 240}px`
     );
 
-    confetti.style.animationDelay =
-      `${Math.random() * 1.6}s`;
+    confettiEl.style.animationDelay =
+      `${Math.random() * 2}s`;
 
-    celebrationLayer.appendChild(confetti);
+    // Varied rotation speeds for natural confetti tumble
+    const rotation = (Math.random() - 0.5) * 1440; // -720 to 720 degrees
+    confettiEl.style.setProperty('--rotate', `${rotation}deg`);
 
-    setTimeout(() => {
-      confetti.remove();
+    // Vary fall duration and timing function
+    const fallDur = 4 + Math.random() * 3; // 4-7s
+    confettiEl.style.setProperty('--fall-dur', `${fallDur}s`);
+    const timingFn = timingFunctions[Math.floor(Math.random() * timingFunctions.length)];
+    confettiEl.style.setProperty('--timing-fn', timingFn);
+
+    fragment.appendChild(confettiEl);
+
+    trackTimeout(() => {
+      confettiEl.remove();
+      returnToPool('confetti', confettiEl);
     }, 7000);
   }
+
+  // Append all at once
+  celebrationLayer.appendChild(fragment);
 }
 
 
@@ -838,7 +978,7 @@ function triggerHeartbeat() {
 
   dimNearbyStars();
 
-  setTimeout(() => {
+  trackTimeout(() => {
 
     heartStage.classList.remove('beating');
 
@@ -849,6 +989,464 @@ function triggerHeartbeat() {
 
 
 /* =========================================================
+   HELPER FUNCTIONS
+========================================================= */
+
+function dimNearbyStars() {
+  const stars = getStars();
+  stars.forEach(star => {
+    if (Math.random() > 0.3) {
+      star.style.opacity = '0.3';
+    }
+  });
+}
+
+function restoreStars() {
+  const stars = getStars();
+  stars.forEach(star => {
+    star.style.opacity = '';
+  });
+}
+
+function launchTransformationPulse() {
+  const pulse = document.createElement('div');
+  pulse.className = 'transformation-pulse';
+  document.body.appendChild(pulse);
+
+  trackTimeout(() => pulse.remove(), 1500);
+}
+
+/* =========================================================
+   MESSAGE SCENE
+   ========================================================= */
+
+function showMessageScene() {
+  // Fade out heart stage
+  if (heartStage) {
+    heartStage.style.opacity = '0';
+    heartStage.style.pointerEvents = 'none';
+  }
+  if (centerBeacon) {
+    centerBeacon.style.opacity = '0';
+  }
+
+  // Show message scene
+  if (messageScene) {
+    messageScene.classList.add('visible');
+  }
+
+  // Show first message line
+  if (messageLine1) {
+    trackTimeout(() => {
+      messageLine1.classList.add('visible');
+    }, 500);
+  }
+
+  // Show second message line after delay
+  if (messageLine2) {
+    trackTimeout(() => {
+      messageLine2.classList.add('visible');
+    }, 3500);
+  }
+
+  // Create floating hearts for message scene
+  trackTimeout(() => {
+    createFloatingHearts();
+  }, 1000);
+
+  // Create glowing flowers for message scene
+  trackTimeout(() => {
+    createGlowingFlowers();
+  }, 1500);
+
+  // Transition to final message after messages are shown
+  trackTimeout(() => {
+    transitionToFinalMessage();
+  }, 8000);
+}
+
+function transitionToFinalMessage() {
+  // Fade out message scene
+  if (messageScene) {
+    messageScene.classList.add('fade-out');
+  }
+
+  // Show letter scene after message scene fades
+  trackTimeout(() => {
+    showLetterScene();
+  }, 2000);
+}
+
+function showLetterScene() {
+  // Show letter scene
+  if (letterScene) {
+    letterScene.classList.add('visible');
+  }
+
+  // Show first letter line
+  if (letterLine1) {
+    trackTimeout(() => {
+      letterLine1.classList.add('visible');
+    }, 300);
+  }
+
+  // Show second letter line
+  if (letterLine2) {
+    trackTimeout(() => {
+      letterLine2.classList.add('visible');
+    }, 2800);
+  }
+
+  // Show prompt with pulse animation
+  if (letterPrompt) {
+    trackTimeout(() => {
+      letterPrompt.classList.add('pulse');
+    }, 4500);
+  }
+
+  // Envelope interaction
+  if (envelope) {
+    envelope.addEventListener('click', openEnvelope);
+    envelope.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openEnvelope();
+      }
+    });
+  }
+}
+
+function openEnvelope() {
+  // Remove event listeners to prevent double-trigger
+  if (envelope) {
+    envelope.removeEventListener('click', openEnvelope);
+    envelope.classList.add('open');
+  }
+
+  // Stop prompt pulse
+  if (letterPrompt) {
+    letterPrompt.classList.remove('pulse');
+  }
+
+  // Fade out letter scene
+  if (letterScene) {
+    letterScene.classList.add('fade-out');
+  }
+
+  // Show letter content scene
+  trackTimeout(() => {
+    showLetterContent();
+  }, 1000);
+}
+
+function showLetterContent() {
+  // Show letter content scene
+  if (letterContentScene) {
+    letterContentScene.classList.add('visible');
+  }
+
+  // Letter content paragraphs for typewriter-style reveal
+  const letterParagraphs = [
+    "Heyy! 😄",
+    "",
+    "Happy Birthday! 🎉🎂",
+    "",
+    "I honestly hope you have an amazing day because you really deserve it. I just wanted to make something special for you and hopefully make your birthday a little more memorable.",
+    "",
+    "I hope this new year brings you lots of happiness, good memories, success, and everything you're wishing for.",
+    "",
+    "Enjoy your day, have fun, laugh a lot, and make the most of it.",
+    "",
+    "Happy Birthday once again! 🥳❤️",
+    "",
+    "I hope this little surprise makes your day a bit more special.",
+    "",
+    "— From me ❤️"
+  ];
+
+  // Reveal paragraphs gradually
+  if (letterText) {
+    letterText.textContent = '';
+    letterParagraphs.forEach((paragraph, index) => {
+      const delay = 400 + index * 350; // Staggered reveal
+      trackTimeout(() => {
+        const p = document.createElement('p');
+        p.className = 'letter-paragraph';
+        p.style.opacity = '0';
+        p.style.transform = 'translateY(10px)';
+        p.textContent = paragraph;
+        letterText.appendChild(p);
+
+        // Animate in
+        trackTimeout(() => {
+          p.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+          p.style.opacity = '1';
+          p.style.transform = 'translateY(0)';
+        }, 50);
+      }, delay);
+    });
+  }
+
+  // Create floating hearts around the letter
+  trackTimeout(() => {
+    createLetterHearts();
+  }, 800);
+
+  // Create sparkles around the letter
+  trackTimeout(() => {
+    createLetterSparkles();
+  }, 1000);
+}
+
+function startMessageSequence(callback) {
+  const finalMsg = getFinalMessage();
+  if (finalMsg) {
+    finalMsg.style.opacity = '1';
+    finalMsg.style.transform = 'translate(-50%, -50%) scale(1)';
+    finalMsg.classList.add('visible');
+  }
+  launchCelebration();
+  if (callback) trackTimeout(callback, 2000);
+}
+
+function startGrandReveal() {
+  if (birthdayScreen) {
+    birthdayScreen.style.opacity = '0';
+    birthdayScreen.style.pointerEvents = 'none';
+  }
+  const finalMsg = getFinalMessage();
+  if (finalMsg) finalMsg.classList.add('final-reveal');
+}
+
+/* =========================================================
+   MESSAGE SCENE EFFECTS
+   ========================================================= */
+
+function createFloatingHearts() {
+  const count = 8;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'floating-heart';
+
+    // Random start position around the message area
+    const startX = 50 + (Math.random() - 0.5) * 60; // 20-80%
+    const startY = 50 + (Math.random() - 0.5) * 40; // 30-70%
+    heart.style.left = `${startX}%`;
+    heart.style.top = `${startY}%`;
+
+    // Drift amount
+    const dx = (Math.random() - 0.5) * 200;
+    const dy = -Math.random() * 150 - 50;
+    heart.style.setProperty('--sx', `${dx}px`);
+    heart.style.setProperty('--sy', `${dy}px`);
+
+    // Vary animation duration: 10-14s
+    const duration = 10 + Math.random() * 4;
+    heart.style.animationDuration = `${duration}s`;
+
+    // Stagger start
+    heart.style.animationDelay = `${Math.random() * 3}s`;
+
+    // Vary size
+    const size = 14 + Math.random() * 10;
+    heart.style.width = `${size}px`;
+    heart.style.height = `${size}px`;
+
+    fragment.appendChild(heart);
+  }
+
+  messageScene.appendChild(fragment);
+
+  // Trigger visibility after adding to DOM
+  trackTimeout(() => {
+    fragment.querySelectorAll('.floating-heart').forEach(h => h.classList.add('visible'));
+  }, 50);
+}
+
+function createGlowingFlowers() {
+  const count = 12;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const flower = document.createElement('span');
+    flower.className = 'glowing-flower';
+
+    // Random position around the message area
+    const startX = 10 + Math.random() * 80; // 10-90%
+    const startY = 10 + Math.random() * 80; // 10-90%
+    flower.style.left = `${startX}%`;
+    flower.style.top = `${startY}%`;
+
+    // Drift amount
+    const dx = (Math.random() - 0.5) * 120;
+    const dy = -Math.random() * 100 - 30;
+    flower.style.setProperty('--sx', `${dx}px`);
+    flower.style.setProperty('--sy', `${dy}px`);
+
+    // Vary animation duration: 8-12s
+    const duration = 8 + Math.random() * 4;
+    flower.style.animationDuration = `${duration}s`;
+
+    // Stagger start
+    flower.style.animationDelay = `${Math.random() * 2}s`;
+
+    // Vary size
+    const size = 8 + Math.random() * 8;
+    flower.style.width = `${size}px`;
+    flower.style.height = `${size}px`;
+
+    fragment.appendChild(flower);
+  }
+
+  messageScene.appendChild(fragment);
+
+  // Trigger visibility after adding to DOM
+  trackTimeout(() => {
+    fragment.querySelectorAll('.glowing-flower').forEach(f => f.classList.add('visible'));
+  }, 50);
+}
+
+/* =========================================================
+   AMBIENT SPARKLES
+   ========================================================= */
+
+function createAmbientSparkles() {
+  const count = PERFORMANCE.ambientSparkles;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const sparkle = particlePools.ambientSparkle.pop() || document.createElement('span');
+    sparkle.className = 'ambient-sparkle';
+
+    // Random position across the viewport
+    sparkle.style.left = `${Math.random() * 100}%`;
+    sparkle.style.top = `${Math.random() * 100}%`;
+
+    // Very slow, gentle drift
+    const dx = (Math.random() - 0.5) * 200;
+    const dy = -Math.random() * 300 - 100;
+    sparkle.style.setProperty('--dx', `${dx}px`);
+    sparkle.style.setProperty('--dy', `${dy}px`);
+
+    // Long duration: 15-20 seconds
+    const duration = 15 + Math.random() * 5;
+    sparkle.style.animationDuration = `${duration}s`;
+
+    // Subtle size variation
+    const size = 3 + Math.random() * 3; // 3-6px
+    sparkle.style.width = `${size}px`;
+    sparkle.style.height = `${size}px`;
+
+    // Staggered start
+    sparkle.style.animationDelay = `${Math.random() * 5}s`;
+
+    fragment.appendChild(sparkle);
+  }
+
+  celebrationLayer.appendChild(fragment);
+}
+
+/* =========================================================
+   LETTER CONTENT SCENE EFFECTS
+   ========================================================= */
+
+function createLetterHearts() {
+  const count = 10;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'letter-heart';
+
+    // Random position around the letter area (center of screen)
+    const startX = 50 + (Math.random() - 0.5) * 70; // 15-85%
+    const startY = 50 + (Math.random() - 0.5) * 60; // 20-80%
+    heart.style.left = `${startX}%`;
+    heart.style.top = `${startY}%`;
+
+    // Drift amount - gentle floating around letter
+    const dx = (Math.random() - 0.5) * 180;
+    const dy = -Math.random() * 200 - 50;
+    heart.style.setProperty('--sx', `${dx}px`);
+    heart.style.setProperty('--sy', `${dy}px`);
+
+    // Vary animation duration: 12-16s
+    const duration = 12 + Math.random() * 4;
+    heart.style.animationDuration = `${duration}s`;
+
+    // Stagger start
+    heart.style.animationDelay = `${Math.random() * 4}s`;
+
+    // Vary size
+    const size = 16 + Math.random() * 12; // 16-28px
+    heart.style.width = `${size}px`;
+    heart.style.height = `${size}px`;
+
+    fragment.appendChild(heart);
+  }
+
+  document.body.appendChild(fragment);
+
+  // Trigger visibility after adding to DOM
+  trackTimeout(() => {
+    fragment.querySelectorAll('.letter-heart').forEach(h => h.classList.add('visible'));
+  }, 50);
+}
+
+function createLetterSparkles() {
+  const count = 15;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const sparkle = document.createElement('span');
+    sparkle.className = 'letter-sparkle';
+
+    // Random position around the letter area
+    const startX = 50 + (Math.random() - 0.5) * 80; // 10-90%
+    const startY = 50 + (Math.random() - 0.5) * 70; // 15-85%
+    sparkle.style.left = `${startX}%`;
+    sparkle.style.top = `${startY}%`;
+
+    // Drift amount
+    const dx = (Math.random() - 0.5) * 150;
+    const dy = -Math.random() * 180 - 30;
+    sparkle.style.setProperty('--sx', `${dx}px`);
+    sparkle.style.setProperty('--sy', `${dy}px`);
+
+    // Vary animation duration: 8-12s
+    const duration = 8 + Math.random() * 4;
+    sparkle.style.animationDuration = `${duration}s`;
+
+    // Stagger start
+    sparkle.style.animationDelay = `${Math.random() * 3}s`;
+
+    // Vary size
+    const size = 4 + Math.random() * 4; // 4-8px
+    sparkle.style.width = `${size}px`;
+    sparkle.style.height = `${size}px`;
+
+    fragment.appendChild(sparkle);
+  }
+
+  document.body.appendChild(fragment);
+
+  // Trigger visibility after adding to DOM
+  trackTimeout(() => {
+    fragment.querySelectorAll('.letter-sparkle').forEach(s => s.classList.add('visible'));
+  }, 50);
+}
+
+/* =========================================================
+   GLOBAL STATE (declared first to avoid TDZ)
+   ========================================================= */
+
+let heartbeatLoop;
+let allTimeouts = [];
+let allIntervals = [];
+
+/* =========================================================
    STARTUP
    ========================================================= */
 
@@ -856,152 +1454,23 @@ createStars();
 createDust();
 createHeartParticles();
 
-let heartbeatLoop;
+// Helper to track timeouts for cleanup
+function trackTimeout(fn, delay) {
+  const id = setTimeout(fn, delay);
+  allTimeouts.push(id);
+  return id;
+}
 
-setTimeout(() => {
+// Helper to track intervals for cleanup
+function trackInterval(fn, delay) {
+  const id = setInterval(fn, delay);
+  allIntervals.push(id);
+  return id;
+}
 
-  scene.classList.add('ready');
-
-  const stars =
-    Array.from(
-      document.querySelectorAll('.star')
-    );
-
-  stars.forEach((star, index) => {
-
-    setTimeout(() => {
-
-      star.classList.add('visible');
-
-    }, 700 + index * 20);
-
-  });
-
-
-  setTimeout(() => {
-
-    centerBeacon.classList.add('visible');
-
-  }, 1800);
-
-
-  setTimeout(() => {
-
-    heartStage.classList.add('revealed');
-
-    heartShell.style.opacity =
-      '1';
-
-  }, 4000);
-
-
-  // Heartbeat
-
-  setTimeout(() => {
-
-    triggerHeartbeat();
-
-    heartbeatLoop =
-      setInterval(
-        triggerHeartbeat,
-        5200
-      );
-
-  }, 6500);
-
-
-  // Begin transformation
-
-  setTimeout(() => {
-
-    clearInterval(heartbeatLoop);
-
-    heartStage.classList.add('quiet');
-
-    centerBeacon.style.opacity =
-      '0.64';
-
-
-    setTimeout(() => {
-
-      launchTransformationPulse();
-
-    }, 900);
-
-
-    setTimeout(() => {
-
-      heartStage.style.filter =
-        'drop-shadow(0 0 30px rgba(255,175,197,0.55))';
-
-      heartShell.style.transform =
-        'translate(-50%, -50%) scale(0.9)';
-
-      beginTreeTransformation();
-
-    }, 2400);
-
-
-    // Tree fireflies
-
-    setTimeout(() => {
-
-      const fireflies =
-        isLowPower ? 10 : 16;
-
-      for (
-        let i = 0;
-        i < fireflies;
-        i++
-      ) {
-
-        const firefly =
-          document.createElement('span');
-
-        firefly.className =
-          'firefly';
-
-        firefly.style.left =
-          `${Math.random() * 100}%`;
-
-        firefly.style.top =
-          `${Math.random() * 100}%`;
-
-        firefly.style.setProperty(
-          '--fx',
-          `${(Math.random() - 0.5) * 44}px`
-        );
-
-        firefly.style.setProperty(
-          '--fy',
-          `${(Math.random() - 0.5) * 44}px`
-        );
-
-        firefly.style.animationDelay =
-          `${Math.random() * 3}s`;
-
-        treeStage.appendChild(firefly);
-
-        setTimeout(() => {
-          firefly.remove();
-        }, 12000);
-      }
-
-    }, 5000);
-
-
-    // Story
-
-    setTimeout(() => {
-
-      startMessageSequence(() => {
-
-        startGrandReveal();
-
-      });
-
-    }, 8200);
-
-  }, 15000);
-
-}, 1000);
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  allTimeouts.forEach(id => clearTimeout(id));
+  allIntervals.forEach(id => clearInterval(id));
+  stopPerformanceMonitoring();
+});
