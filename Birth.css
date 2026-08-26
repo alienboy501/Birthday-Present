@@ -1648,6 +1648,7 @@ body::after {
 
 .letter-scene.visible {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .letter-scene.fade-out {
@@ -1921,6 +1922,7 @@ body::after {
   position: fixed;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   opacity: 0;
@@ -1928,6 +1930,7 @@ body::after {
   transition: opacity 1.5s ease;
   z-index: 200;
   background: rgba(10, 5, 20, 0.95);
+  padding: 2rem 1rem;
 }
 
 .letter-content-scene.visible {
@@ -2034,6 +2037,111 @@ body::after {
 .letter-paragraph:empty {
   margin: 0.75rem 0;
   min-height: 1.2em;
+}
+
+/* Letter continue icon - small elegant glowing icon */
+.letter-continue-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem auto 0;
+  width: 44px;
+  height: 44px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
+              linear-gradient(135deg, #a885e8 0%, #8b6ad4 35%, #6d4fc0 65%, #583db8 100%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow:
+    0 0 15px rgba(168, 133, 232, 0.5),
+    0 0 30px rgba(139, 106, 212, 0.3),
+    0 4px 12px rgba(109, 79, 192, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  opacity: 0;
+  transform: translateY(10px) scale(0.8);
+  transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 210;
+  pointer-events: none;
+}
+
+/* Subtle pulsing glow ring */
+.letter-continue-icon::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a885e8 0%, #8b6ad4 35%, #6d4fc0 65%, #583db8 100%);
+  opacity: 0;
+  filter: blur(8px);
+  animation: continueIconPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.letter-content-scene.visible .letter-continue-icon.visible,
+.letter-content-scene:has(.letter-continue-icon.visible) .letter-continue-icon.visible {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto;
+  animation: continueIconFloat 3s ease-in-out infinite;
+}
+
+.letter-continue-icon:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow:
+    0 0 20px rgba(168, 133, 232, 0.6),
+    0 0 40px rgba(139, 106, 212, 0.4),
+    0 6px 16px rgba(109, 79, 192, 0.5),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  filter: brightness(1.1);
+}
+
+.letter-continue-icon:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.continue-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(109, 79, 192, 0.7);
+  line-height: 1;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes continueIconFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.01);
+  }
+}
+
+@keyframes continueIconPulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.15);
+  }
+}
+
+/* Reduced motion support for continue icon */
+@media (prefers-reduced-motion: reduce) {
+  .letter-content-scene.visible .letter-continue-icon.visible {
+    animation: none;
+  }
+  .letter-continue-icon::before {
+    animation: none;
+    opacity: 0.3;
+  }
 }
 
 /* ---------------------------------------------------------
@@ -2215,6 +2323,299 @@ body::after {
   animation: finalMessageEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* =========================================================
+   CELEBRATION CONTENT & TEXT ANIMATIONS
+   ========================================================= */
+
+.celebration-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.celebration-title {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow:
+    0 2px 8px rgba(255, 255, 255, 0.6),
+    0 0 30px rgba(255, 180, 210, 0.8),
+    0 0 60px rgba(200, 150, 255, 0.5),
+    0 0 100px rgba(255, 100, 150, 0.3);
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  animation: celebrationTitleEntrance 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes celebrationTitleEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    filter: blur(10px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.02);
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.celebration-title.glow {
+  animation: titleGlowPulse 3s ease-in-out infinite;
+}
+
+@keyframes titleGlowPulse {
+  0%, 100% {
+    text-shadow:
+      0 2px 8px rgba(255, 255, 255, 0.6),
+      0 0 30px rgba(255, 180, 210, 0.8),
+      0 0 60px rgba(200, 150, 255, 0.5),
+      0 0 100px rgba(255, 100, 150, 0.3);
+  }
+  50% {
+    text-shadow:
+      0 2px 8px rgba(255, 255, 255, 0.8),
+      0 0 40px rgba(255, 180, 210, 1),
+      0 0 80px rgba(200, 150, 255, 0.7),
+      0 0 120px rgba(255, 100, 150, 0.5);
+  }
+}
+
+.celebration-subtitle {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(1.1rem, 2.8vw, 1.4rem);
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(255, 180, 210, 0.4),
+    0 0 40px rgba(200, 150, 255, 0.2);
+  max-width: 600px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: subtitleReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: 1.5s;
+}
+
+@keyframes subtitleReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   CELEBRATION PARTICLES
+   ========================================================= */
+
+/* Celebration burst - soft light explosions */
+.celebration-burst {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, transparent 70%);
+  box-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,180,210,0.6);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  animation: celebrationBurst 1.2s ease-out forwards;
+  z-index: 150;
+}
+
+@keyframes celebrationBurst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(30);
+  }
+}
+
+/* Magic sparkles - small twinkling particles */
+.magic-sparkle {
+  position: fixed;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,230,200,0.8) 30%, rgba(255,200,160,0.4) 60%, transparent 85%);
+  box-shadow: 0 0 6px rgba(255,240,210,0.8), 0 0 12px rgba(255,220,180,0.5);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 140;
+  animation: magicSparkleFloat 8s ease-in-out infinite;
+}
+
+@keyframes magicSparkleFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--sx, 0), var(--sy, 0), 0) scale(0.5);
+  }
+  15% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate3d(calc(var(--sx, 0) * 0.5), calc(var(--sy, 0) * 0.5), 0) scale(1);
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--sx, 0), var(--sy, 0), 0) scale(0.5);
+  }
+}
+
+/* Floating hearts for celebration */
+.celebration-heart {
+  position: fixed;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 145;
+}
+
+.celebration-heart::before,
+.celebration-heart::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 0;
+  width: 10px;
+  height: 16px;
+  background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.6) 0%, rgba(255,160,195,0.95) 45%, rgba(240,100,160,0.9) 100%);
+  border-radius: 50% 50% 0 0;
+  transform: rotate(-45deg);
+  transform-origin: 0 100%;
+  box-shadow: 0 0 8px rgba(255,160,195,0.7), 0 0 16px rgba(240,100,160,0.4);
+}
+
+.celebration-heart::after {
+  left: 0;
+  transform: rotate(45deg);
+  transform-origin: 100% 100%;
+}
+
+.celebration-heart.visible {
+  animation: celebrationHeartFloat 12s ease-in-out infinite;
+}
+
+@keyframes celebrationHeartFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--sx, 0), var(--sy, 0), 0) scale(0.4) rotate(-15deg);
+  }
+  15% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.4;
+    transform: translate3d(calc(var(--sx, 0) * 0.4), calc(var(--sy, 0) * 0.4), 0) scale(1) rotate(15deg);
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--sx, 0), var(--sy, 0), 0) scale(0.4) rotate(-15deg);
+  }
+}
+
+/* Light explosion rings */
+.light-explosion {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 180, 210, 0.6);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  animation: lightExplosion 1.5s ease-out forwards;
+  z-index: 140;
+}
+
+@keyframes lightExplosion {
+  0% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(40);
+  }
+}
+
+/* Celebration balloons */
+.celebration-balloon {
+  position: fixed;
+  width: 24px;
+  height: 30px;
+  border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.3), var(--balloon-color) 45%, var(--balloon-color-dark) 100%);
+  box-shadow: 0 0 10px rgba(255,170,200,0.4);
+  pointer-events: none;
+  opacity: 0.8;
+  z-index: 130;
+  animation: celebrationBalloonFloat 15s ease-in-out infinite;
+}
+
+.celebration-balloon::after {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  width: 1px;
+  height: 12px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.4), transparent);
+  transform: translateX(-50%);
+}
+
+@keyframes celebrationBalloonFloat {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+  50% {
+    transform: translate3d(var(--dx), -200px, 0) rotate(2deg);
+  }
+  100% {
+    transform: translate3d(0, -400px, 0) rotate(-2deg);
+  }
+}
+
+/* Full-screen celebration overlay for particles */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 120;
+  overflow: hidden;
+}
 
 /* ---------------------------------------------------------
    SCENE STATES
@@ -2245,6 +2646,11 @@ body::after {
   .ambient-sparkle,
   .letter-heart,
   .letter-sparkle,
+  .celebration-burst,
+  .magic-sparkle,
+  .celebration-heart,
+  .light-explosion,
+  .celebration-balloon,
   .center-beacon.visible,
   .final-message.visible {
     animation: none !important;
@@ -2254,5 +2660,16 @@ body::after {
   .final-message.visible {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+  }
+
+  .celebration-title {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+
+  .celebration-subtitle {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

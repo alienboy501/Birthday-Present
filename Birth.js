@@ -180,6 +180,7 @@ const letterPrompt = document.getElementById('letterPrompt');
 const letterContentScene = document.getElementById('letterContentScene');
 const letterPaper = document.getElementById('letterPaper');
 const letterText = document.getElementById('letterText');
+const letterCloseBtn = document.getElementById('letterCloseBtn');
 
 // Wrapper elements for effects that need containers
 const heartStage = heartOrbit; // Use heartOrbit as heartStage
@@ -907,7 +908,7 @@ function launchCelebration() {
     balloon.style.setProperty('--timing-fn', timingFn);
 
     // Random balloon color variant
-    const colorVariants = ['', 'pink', 'gold', 'lavender', 'mint'];
+    const colorVariants = ['pink', 'gold', 'lavender', 'mint'];
     balloon.classList.add(colorVariants[Math.floor(Math.random() * colorVariants.length)]);
 
     fragment.appendChild(balloon);
@@ -1196,6 +1197,69 @@ function showLetterContent() {
   trackTimeout(() => {
     createLetterSparkles();
   }, 1000);
+
+  // Show continue button after letter-opening animation finishes
+  // Letter scene fades out (1000ms) + paper animation (800ms) = ~1800ms
+  trackTimeout(() => {
+    if (letterCloseBtn) {
+      letterCloseBtn.classList.add('visible');
+    }
+  }, 1800);
+
+  // Set up close button handler
+  if (letterCloseBtn) {
+    letterCloseBtn.addEventListener('click', closeLetterAndShowFinal);
+    letterCloseBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        closeLetterAndShowFinal();
+      }
+    });
+  }
+}
+
+function closeLetterAndShowFinal() {
+  // Remove event listener to prevent double-trigger
+  if (letterCloseBtn) {
+    letterCloseBtn.removeEventListener('click', closeLetterAndShowFinal);
+  }
+
+  // Fade out letter content scene
+  if (letterContentScene) {
+    letterContentScene.classList.remove('visible');
+    letterContentScene.style.opacity = '0';
+    letterContentScene.style.pointerEvents = 'none';
+    letterContentScene.setAttribute('aria-hidden', 'true');
+  }
+
+  // Fade out letter paper
+  if (letterPaper) {
+    letterPaper.style.transform = 'scale(0.9) translateY(30px)';
+    letterPaper.style.opacity = '0';
+  }
+
+  // Hide close button
+  if (letterCloseBtn) {
+    letterCloseBtn.classList.remove('visible');
+  }
+
+  // Show final message after letter fades
+  trackTimeout(() => {
+    showFinalMessage();
+  }, 1000);
+}
+
+function showFinalMessage() {
+  // Show final message
+  if (finalMessage) {
+    finalMessage.classList.add('visible');
+    finalMessage.setAttribute('aria-hidden', 'false');
+  }
+
+  // Launch the cinematic celebration sequence
+  trackTimeout(() => {
+    showCelebrationScene();
+  }, 300);
 }
 
 function startMessageSequence(callback) {
@@ -1436,6 +1500,305 @@ function createLetterSparkles() {
   trackTimeout(() => {
     fragment.querySelectorAll('.letter-sparkle').forEach(s => s.classList.add('visible'));
   }, 50);
+}
+
+/* =========================================================
+   CELEBRATION SCENE EFFECTS
+   ========================================================= */
+
+function createCelebrationBursts() {
+  const count = 8;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const burst = document.createElement('span');
+    burst.className = 'celebration-burst';
+
+    // Random position across screen, favoring upper area for fireworks
+    const x = 15 + Math.random() * 70; // 15-85%
+    const y = 10 + Math.random() * 40; // 10-50%
+    burst.style.left = `${x}%`;
+    burst.style.top = `${y}%`;
+
+    // Random color variation
+    const hue = 320 + Math.random() * 60; // Pink to purple range
+    burst.style.background = `radial-gradient(circle, hsl(${hue}, 100%, 70%) 0%, transparent 70%)`;
+    burst.style.boxShadow = `0 0 20px hsl(${hue}, 100%, 70%), 0 0 40px hsl(${hue}, 100%, 50%)`;
+
+    // Stagger animation
+    burst.style.animationDelay = `${Math.random() * 0.5}s`;
+    burst.style.animationDuration = `${1 + Math.random() * 0.5}s`;
+
+    fragment.appendChild(burst);
+  }
+
+  document.body.appendChild(fragment);
+
+  // Cleanup
+  trackTimeout(() => {
+    fragment.querySelectorAll('.celebration-burst').forEach(b => b.remove());
+  }, 2000);
+}
+
+function createLightExplosions() {
+  const count = 6;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const explosion = document.createElement('span');
+    explosion.className = 'light-explosion';
+
+    // Random position
+    const x = 20 + Math.random() * 60;
+    const y = 15 + Math.random() * 35;
+    explosion.style.left = `${x}%`;
+    explosion.style.top = `${y}%`;
+
+    // Random size
+    const size = 60 + Math.random() * 100;
+    explosion.style.width = `${size}px`;
+    explosion.style.height = `${size}px`;
+
+    // Color variation
+    const hue = 330 + Math.random() * 50;
+    explosion.style.borderColor = `hsla(${hue}, 100%, 70%, 0.6)`;
+
+    // Stagger
+    explosion.style.animationDelay = `${Math.random() * 0.8}s`;
+    explosion.style.animationDuration = `${1.2 + Math.random() * 0.6}s`;
+
+    fragment.appendChild(explosion);
+  }
+
+  document.body.appendChild(fragment);
+
+  trackTimeout(() => {
+    fragment.querySelectorAll('.light-explosion').forEach(e => e.remove());
+  }, 2500);
+}
+
+function createMagicSparkles() {
+  const count = 25;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const sparkle = particlePools.ambientSparkle.pop() || document.createElement('span');
+    sparkle.className = 'magic-sparkle';
+
+    // Full screen distribution
+    sparkle.style.left = `${Math.random() * 100}%`;
+    sparkle.style.top = `${Math.random() * 100}%`;
+
+    // Gentle drift
+    const dx = (Math.random() - 0.5) * 150;
+    const dy = -Math.random() * 200 - 50;
+    sparkle.style.setProperty('--sx', `${dx}px`);
+    sparkle.style.setProperty('--sy', `${dy}px`);
+
+    // Long duration
+    const duration = 8 + Math.random() * 4;
+    sparkle.style.animationDuration = `${duration}s`;
+
+    // Size variation
+    const size = 3 + Math.random() * 4;
+    sparkle.style.width = `${size}px`;
+    sparkle.style.height = `${size}px`;
+
+    sparkle.style.animationDelay = `${Math.random() * 3}s`;
+
+    fragment.appendChild(sparkle);
+  }
+
+  document.body.appendChild(fragment);
+}
+
+function createFloatingHeartsCelebration() {
+  const count = 12;
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < count; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'celebration-heart';
+
+    // Start from bottom area, spread horizontally
+    const startX = 10 + Math.random() * 80;
+    const startY = 70 + Math.random() * 25;
+    heart.style.left = `${startX}%`;
+    heart.style.top = `${startY}%`;
+
+    // Drift upward and sideways
+    const dx = (Math.random() - 0.5) * 200;
+    const dy = -Math.random() * 300 - 150;
+    heart.style.setProperty('--sx', `${dx}px`);
+    heart.style.setProperty('--sy', `${dy}px`);
+
+    // Vary animation duration
+    const duration = 10 + Math.random() * 6;
+    heart.style.animationDuration = `${duration}s`;
+
+    // Stagger start
+    heart.style.animationDelay = `${Math.random() * 2}s`;
+
+    // Vary size
+    const size = 14 + Math.random() * 12;
+    heart.style.width = `${size}px`;
+    heart.style.height = `${size}px`;
+
+    fragment.appendChild(heart);
+  }
+
+  document.body.appendChild(fragment);
+
+  // Trigger visibility
+  trackTimeout(() => {
+    fragment.querySelectorAll('.celebration-heart').forEach(h => h.classList.add('visible'));
+  }, 50);
+}
+
+function createCelebrationBalloons() {
+  const count = 8;
+  const fragment = document.createDocumentFragment();
+
+  const balloonColors = [
+    { color: '#ff6b9d', dark: '#e84a7a' },
+    { color: '#ffd93d', dark: '#e6c236' },
+    { color: '#6bcb77', dark: '#5aa865' },
+    { color: '#a8d8ea', dark: '#90c5d6' },
+    { color: '#ffb347', dark: '#e6a03d' },
+    { color: '#d4a5ff', dark: '#c090e8' },
+  ];
+
+  for (let i = 0; i < count; i++) {
+    const balloon = document.createElement('span');
+    balloon.className = 'celebration-balloon';
+
+    const colorSet = balloonColors[i % balloonColors.length];
+    balloon.style.setProperty('--balloon-color', colorSet.color);
+    balloon.style.setProperty('--balloon-color-dark', colorSet.dark);
+
+    // Start from bottom
+    balloon.style.left = `${5 + Math.random() * 90}%`;
+    balloon.style.top = `${90 + Math.random() * 8}%`;
+
+    // Horizontal drift
+    const dx = (Math.random() - 0.5) * 180;
+    balloon.style.setProperty('--dx', `${dx}px`);
+
+    // Vary animation duration
+    const duration = 14 + Math.random() * 6;
+    balloon.style.animationDuration = `${duration}s`;
+
+    balloon.style.animationDelay = `${Math.random() * 2}s`;
+
+    fragment.appendChild(balloon);
+  }
+
+  document.body.appendChild(fragment);
+
+  // Cleanup after they float off screen
+  trackTimeout(() => {
+    fragment.querySelectorAll('.celebration-balloon').forEach(b => b.remove());
+  }, 30000);
+}
+
+/**
+ * Main celebration sequence orchestrator
+ * Creates a cinematic, layered celebration that builds up, peaks, then settles
+ */
+function showCelebrationScene() {
+  const celebrationTitle = document.getElementById('celebrationTitle');
+  const celebrationSubtitle = document.getElementById('celebrationSubtitle');
+
+  // Phase 1: Screen brightens, initial particles appear (0ms)
+  trackTimeout(() => {
+    // Add subtle screen brightening
+    document.body.style.transition = 'background 2s ease';
+    document.body.style.background = `
+      radial-gradient(
+        ellipse 150% 100% at 50% 100%,
+        #1a1030 0%,
+        #251545 30%,
+        #2d1a55 60%,
+        #1a0f3a 100%
+      )`;
+  }, 0);
+
+  // Phase 2: First sparkles and ambient particles (200ms)
+  trackTimeout(() => {
+    createAmbientSparkles();
+  }, 200);
+
+  // Phase 3: Floating hearts begin rising (400ms)
+  trackTimeout(() => {
+    createFloatingHeartsCelebration();
+  }, 400);
+
+  // Phase 4: Confetti starts falling (500ms)
+  trackTimeout(() => {
+    launchCelebration(); // This creates confetti, fireworks, etc.
+  }, 500);
+
+  // Phase 5: Celebration title appears with dramatic entrance (800ms)
+  trackTimeout(() => {
+    if (celebrationTitle) {
+      // Force reflow to ensure animation plays
+      celebrationTitle.offsetHeight;
+      celebrationTitle.classList.add('glow');
+    }
+  }, 800);
+
+  // Phase 6: Light explosions and bursts sync with title (1000ms)
+  trackTimeout(() => {
+    createCelebrationBursts();
+    createLightExplosions();
+  }, 1000);
+
+  // Phase 7: Magic sparkles fill the screen (1200ms)
+  trackTimeout(() => {
+    createMagicSparkles();
+  }, 1200);
+
+  // Phase 8: Balloons start floating up (1500ms)
+  trackTimeout(() => {
+    createCelebrationBalloons();
+  }, 1500);
+
+  // Phase 9: Subtitle reveals (1800ms - handled by CSS animation-delay)
+
+  // Phase 10: Peak moment - second wave of fireworks/bursts (2500ms)
+  trackTimeout(() => {
+    createCelebrationBursts();
+    createLightExplosions();
+    launchCelebration(); // Second wave of confetti/fireworks
+  }, 2500);
+
+  // Phase 11: Third wave - grand finale (4000ms)
+  trackTimeout(() => {
+    createCelebrationBursts();
+    createLightExplosions();
+  }, 4000);
+
+  // Phase 12: Begin calming down - stop creating new intense effects (5500ms)
+  // Effects naturally fade out via their animations
+
+  // Phase 13: Restore night sky background (8000ms)
+  trackTimeout(() => {
+    document.body.style.transition = 'background 4s ease';
+    document.body.style.background = `
+      radial-gradient(
+        ellipse 150% 100% at 50% 100%,
+        #0d0a1a 0%,
+        #140d2a 30%,
+        #1a0f33 60%,
+        #0f081a 100%
+      )`;
+  }, 8000);
+
+  // Phase 14: Keep only gentle ambient sparkles and hearts (10000ms+)
+  trackTimeout(() => {
+    createAmbientSparkles();
+    createFloatingHeartsCelebration();
+  }, 10000);
 }
 
 /* =========================================================
