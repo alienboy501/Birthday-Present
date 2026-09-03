@@ -181,6 +181,12 @@ const letterContentScene = document.getElementById('letterContentScene');
 const letterPaper = document.getElementById('letterPaper');
 const letterText = document.getElementById('letterText');
 const letterCloseBtn = document.getElementById('letterCloseBtn');
+const poemScene = document.getElementById('poemScene');
+const poemContinue = document.getElementById('poemContinue');
+const mysteryGiftScene = document.getElementById('mysteryGiftScene');
+const mysteryGift = document.getElementById('mysteryGift');
+const mysteryGiftContinue = document.getElementById('mysteryGiftContinue');
+const replayButton = document.getElementById('replayButton');
 
 // Wrapper elements for effects that need containers
 const heartStage = heartOrbit; // Use heartOrbit as heartStage
@@ -227,113 +233,61 @@ function startCelebration() {
   // Initialize performance monitoring
   initPerformanceMonitoring();
 
-  // Wait for fade-out animation to complete, then start main sequence
   trackTimeout(() => {
     beginMainSequence();
-  }, 1000); // Match the CSS transition duration
+  }, 1000);
 }
 
 if (startButton) {
   startButton.addEventListener('click', startCelebration);
 }
 
-/* =========================================================
-   MAIN SEQUENCE (extracted from startup setTimeout)
-   ========================================================= */
-
 function beginMainSequence() {
-
   scene.classList.add('ready');
-
   const stars = Array.from(getStars());
 
   stars.forEach((star, index) => {
-
     trackTimeout(() => {
-
       star.classList.add('visible');
-
     }, 700 + index * 20);
-
   });
 
-
   trackTimeout(() => {
-
     centerBeacon.classList.add('visible');
-
   }, 1800);
 
-
   trackTimeout(() => {
-
     heartStage.classList.add('revealed');
-
-    heartShell.style.opacity =
-      '1';
-
+    heartShell.style.opacity = '1';
   }, 4000);
 
-
-  // Heartbeat
-
   trackTimeout(() => {
-
     triggerHeartbeat();
-
-    heartbeatLoop =
-      trackInterval(
-        triggerHeartbeat,
-        5200
-      );
-
+    heartbeatLoop = trackInterval(triggerHeartbeat, 5200);
   }, 6500);
 
-
-  // Begin transformation
-
   trackTimeout(() => {
-
     clearInterval(heartbeatLoop);
-
     heartStage.classList.add('quiet');
-
-    centerBeacon.style.opacity =
-      '0.64';
-
+    centerBeacon.style.opacity = '0.64';
 
     trackTimeout(() => {
-
       launchTransformationPulse();
-
     }, 900);
 
-
     trackTimeout(() => {
-
-      heartStage.style.filter =
-        'drop-shadow(0 0 30px rgba(255,175,197,0.55))';
-
-      heartShell.style.transform =
-        'translate(-50%, -50%) scale(0.9)';
-
+      heartStage.style.filter = 'drop-shadow(0 0 30px rgba(255,175,197,0.55))';
+      heartShell.style.transform = 'translate(-50%, -50%) scale(0.9)';
     }, 2400);
 
-
-    // Ambient sparkles
     trackTimeout(() => {
       createAmbientSparkles();
     }, 5000);
 
-
-    // Show message scene - transition from heart scene to magical night message
-
     trackTimeout(() => {
       showMessageScene();
     }, 8000);
-
   }, 15000);
-
 }
 
 /* =========================================================
@@ -1072,7 +1026,7 @@ function transitionToFinalMessage() {
     messageScene.classList.add('fade-out');
   }
 
-  // Show letter scene after message scene fades
+  // Show the letter scene after the journey
   trackTimeout(() => {
     showLetterScene();
   }, 2000);
@@ -1150,17 +1104,33 @@ function showLetterContent() {
   const letterParagraphs = [
     "Heyy! 😄",
     "",
-    "Happy Birthday! 🎉🎂",
+    "Happy Birthday!! 🎉🎂",
     "",
-    "I honestly hope you have an amazing day because you really deserve it. I just wanted to make something special for you and hopefully make your birthday a little more memorable.",
+    "I honestly hope you have an amazing day because you really deserve it. I hope today brings you lots of happiness, laughter, good memories, and obviously… a ridiculous amount of cake. 😂🎂",
     "",
-    "I hope this new year brings you lots of happiness, good memories, success, and everything you're wishing for.",
+    "I’m really glad I got the chance to know you. You’re honestly such an amazing person, and even though I might not always say it, I really do appreciate having you in my life. You have this way of making things more fun just by being around, and somehow you manage to make me smile without even trying. 😭❤️",
     "",
-    "Enjoy your day, have fun, laugh a lot, and make the most of it.",
+    "And before I continue, there’s something I really want to say.",
     "",
-    "Happy Birthday once again! 🥳❤️",
+    "I’m genuinely sorry for being a jerk and an idiot sometimes. 😔 I know there are moments when I’ve acted badly or said things I probably shouldn’t have, and looking back, I realize I could’ve handled things so much better. I hate knowing that I might have hurt you or made you feel bad, because honestly, that’s never what I wanted.",
     "",
-    "I hope this little surprise makes your day a bit more special.",
+    "I’m not saying sorry just because it’s your birthday or because I want everything to magically be okay. I’m saying it because I genuinely mean it. You didn’t deserve me acting like that, and I should’ve thought more about your feelings instead of just doing whatever my stupid brain decided at the time. 😂😭",
+    "",
+    "I can’t change what I’ve already done, but I can learn from it and try to be better. And honestly, I really don’t want some stupid mistakes from me to ruin the friendship we have. You mean more to me than I probably let on, and I hope you know that. ❤️",
+    "",
+    "Anywayyy, enough of the serious stuff before I start sounding like I’m giving a speech at your wedding. 😭😂",
+    "",
+    "Since it’s your birthday, I hope you get everything you wished for… although if one of those wishes involves a certain handsome, slightly stupid guy, I’m not saying no. 👀😂❤️",
+    "",
+    "But seriously, I hope this new year of your life is filled with happiness, amazing memories, success, and people who genuinely care about you. Keep being the amazing, funny, beautiful person you are, and don’t let anyone make you feel like you’re anything less than that.",
+    "",
+    "And yes, you’re officially one year older… congratulations. 🎉😂 Unfortunately, I still have no idea how you’re going to deal with me for another year. 😭",
+    "",
+    "Happy Birthday once again. ❤️🎂",
+    "",
+    "I hope you smile a lot today, laugh until your stomach hurts, eat way too much cake, and most importantly, enjoy your day because you deserve it.",
+    "",
+    "Happy Birthday, birthday girl. ❤️🥳",
     "",
     "— From me ❤️"
   ];
@@ -1208,20 +1178,20 @@ function showLetterContent() {
 
   // Set up close button handler
   if (letterCloseBtn) {
-    letterCloseBtn.addEventListener('click', closeLetterAndShowFinal);
+    letterCloseBtn.addEventListener('click', closeLetterAndShowMysteryGift);
     letterCloseBtn.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        closeLetterAndShowFinal();
+        closeLetterAndShowMysteryGift();
       }
     });
   }
 }
 
-function closeLetterAndShowFinal() {
+function closeLetterAndShowMysteryGift() {
   // Remove event listener to prevent double-trigger
   if (letterCloseBtn) {
-    letterCloseBtn.removeEventListener('click', closeLetterAndShowFinal);
+    letterCloseBtn.removeEventListener('click', closeLetterAndShowMysteryGift);
   }
 
   // Fade out letter content scene
@@ -1230,6 +1200,14 @@ function closeLetterAndShowFinal() {
     letterContentScene.style.opacity = '0';
     letterContentScene.style.pointerEvents = 'none';
     letterContentScene.setAttribute('aria-hidden', 'true');
+  }
+
+  if (letterScene) {
+    letterScene.classList.remove('visible');
+    letterScene.classList.remove('fade-out');
+    letterScene.style.opacity = '0';
+    letterScene.style.pointerEvents = 'none';
+    letterScene.setAttribute('aria-hidden', 'true');
   }
 
   // Fade out letter paper
@@ -1243,10 +1221,100 @@ function closeLetterAndShowFinal() {
     letterCloseBtn.classList.remove('visible');
   }
 
-  // Show final message after letter fades
+  // Show the gift after the letter fades
   trackTimeout(() => {
+    showMysteryGift();
+  }, 1000);
+}
+
+function showPoem() {
+  if (!poemScene) return;
+
+  poemScene.classList.add('visible');
+  poemScene.setAttribute('aria-hidden', 'false');
+
+  poemScene.querySelectorAll('.poem-line').forEach((line, index) => {
+    line.style.setProperty('--poem-delay', `${250 + index * 170}ms`);
+  });
+
+  if (poemContinue) {
+    poemContinue.removeEventListener('click', continueFromPoem);
+    poemContinue.addEventListener('click', continueFromPoem, { once: true });
+    trackTimeout(() => poemContinue.classList.add('visible'), 7000);
+  }
+}
+
+function continueFromPoem() {
+  if (!poemScene) return;
+
+  poemScene.classList.remove('visible');
+  poemScene.classList.add('fade-out');
+  poemScene.setAttribute('aria-hidden', 'true');
+
+  trackTimeout(() => {
+    poemScene.classList.remove('fade-out');
     showFinalMessage();
   }, 1000);
+}
+
+function showMysteryGift() {
+  if (!mysteryGiftScene) return;
+
+  mysteryGiftScene.classList.add('visible');
+  mysteryGiftScene.setAttribute('aria-hidden', 'false');
+
+  if (mysteryGift) {
+    mysteryGift.addEventListener('click', openMysteryGift, { once: true });
+    mysteryGift.addEventListener('keydown', handleMysteryGiftKeydown);
+  }
+}
+
+function handleMysteryGiftKeydown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    openMysteryGift();
+  }
+}
+
+function openMysteryGift() {
+  if (!mysteryGift || mysteryGift.classList.contains('open')) return;
+
+  mysteryGift.classList.add('open');
+  mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
+
+  trackTimeout(() => {
+    mysteryGift.classList.add('rose-rising');
+  }, 900);
+
+  trackTimeout(() => {
+    mysteryGift.classList.add('rose-bloomed');
+  }, 1800);
+
+  trackTimeout(() => {
+    mysteryGift.classList.add('message-visible');
+  }, 3000);
+
+  trackTimeout(() => {
+    if (mysteryGiftContinue) {
+      mysteryGiftContinue.classList.add('visible');
+      mysteryGiftContinue.focus();
+    }
+  }, 3900);
+}
+
+function continueToPoem() {
+  if (!mysteryGiftScene) return;
+
+  mysteryGiftScene.classList.add('fade-out');
+  mysteryGiftScene.setAttribute('aria-hidden', 'true');
+
+  trackTimeout(() => {
+    showPoem();
+  }, 1000);
+}
+
+if (mysteryGiftContinue) {
+  mysteryGiftContinue.addEventListener('click', continueToPoem);
 }
 
 function showFinalMessage() {
@@ -1707,99 +1775,82 @@ function createCelebrationBalloons() {
  */
 function showCelebrationScene() {
   const celebrationTitle = document.getElementById('celebrationTitle');
-  const celebrationSubtitle = document.getElementById('celebrationSubtitle');
+  if (!finalMessage) return;
 
-  // Phase 1: Screen brightens, initial particles appear (0ms)
+  finalMessage.classList.remove('message-stage', 'ending');
+  if (replayButton) replayButton.classList.remove('visible');
+  document.body.style.transition = 'background 2s ease';
+  document.body.style.background = 'radial-gradient(ellipse at 50% 45%, #24172c 0%, #100b1b 58%, #080711 100%)';
+
   trackTimeout(() => {
-    // Add subtle screen brightening
-    document.body.style.transition = 'background 2s ease';
-    document.body.style.background = `
-      radial-gradient(
-        ellipse 150% 100% at 50% 100%,
-        #1a1030 0%,
-        #251545 30%,
-        #2d1a55 60%,
-        #1a0f3a 100%
-      )`;
-  }, 0);
+    finalMessage.classList.add('message-stage');
+    if (celebrationTitle) celebrationTitle.classList.add('glow');
+  }, 600);
 
-  // Phase 2: First sparkles and ambient particles (200ms)
   trackTimeout(() => {
-    createAmbientSparkles();
-  }, 200);
+    finalMessage.classList.add('ending');
+  }, 3600);
 
-  // Phase 3: Floating hearts begin rising (400ms)
   trackTimeout(() => {
-    createFloatingHeartsCelebration();
-  }, 400);
-
-  // Phase 4: Confetti starts falling (500ms)
-  trackTimeout(() => {
-    launchCelebration(); // This creates confetti, fireworks, etc.
-  }, 500);
-
-  // Phase 5: Celebration title appears with dramatic entrance (800ms)
-  trackTimeout(() => {
-    if (celebrationTitle) {
-      // Force reflow to ensure animation plays
-      celebrationTitle.offsetHeight;
-      celebrationTitle.classList.add('glow');
-    }
-  }, 800);
-
-  // Phase 6: Light explosions and bursts sync with title (1000ms)
-  trackTimeout(() => {
-    createCelebrationBursts();
-    createLightExplosions();
-  }, 1000);
-
-  // Phase 7: Magic sparkles fill the screen (1200ms)
-  trackTimeout(() => {
-    createMagicSparkles();
-  }, 1200);
-
-  // Phase 8: Balloons start floating up (1500ms)
-  trackTimeout(() => {
-    createCelebrationBalloons();
-  }, 1500);
-
-  // Phase 9: Subtitle reveals (1800ms - handled by CSS animation-delay)
-
-  // Phase 10: Peak moment - second wave of fireworks/bursts (2500ms)
-  trackTimeout(() => {
-    createCelebrationBursts();
-    createLightExplosions();
-    launchCelebration(); // Second wave of confetti/fireworks
-  }, 2500);
-
-  // Phase 11: Third wave - grand finale (4000ms)
-  trackTimeout(() => {
-    createCelebrationBursts();
-    createLightExplosions();
-  }, 4000);
-
-  // Phase 12: Begin calming down - stop creating new intense effects (5500ms)
-  // Effects naturally fade out via their animations
-
-  // Phase 13: Restore night sky background (8000ms)
-  trackTimeout(() => {
-    document.body.style.transition = 'background 4s ease';
-    document.body.style.background = `
-      radial-gradient(
-        ellipse 150% 100% at 50% 100%,
-        #0d0a1a 0%,
-        #140d2a 30%,
-        #1a0f33 60%,
-        #0f081a 100%
-      )`;
-  }, 8000);
-
-  // Phase 14: Keep only gentle ambient sparkles and hearts (10000ms+)
-  trackTimeout(() => {
-    createAmbientSparkles();
-    createFloatingHeartsCelebration();
-  }, 10000);
+    if (replayButton) replayButton.classList.add('visible');
+  }, 4700);
 }
+
+function replayJourney() {
+  const replayTitle = document.getElementById('celebrationTitle');
+  allTimeouts.forEach(id => clearTimeout(id));
+  allIntervals.forEach(id => clearInterval(id));
+  allTimeouts = [];
+  allIntervals = [];
+  stopPerformanceMonitoring();
+
+  document.querySelectorAll('.star, .dust, .heart-particle').forEach(element => {
+    element.classList.remove('visible', 'revealed', 'quiet');
+  });
+  document.querySelectorAll('.celebration-burst, .magic-sparkle, .celebration-heart, .light-explosion, .celebration-balloon, .confetti, .firework').forEach(element => element.remove());
+
+  [messageScene, letterScene, letterContentScene, poemScene, mysteryGiftScene, finalMessage].forEach(element => {
+    if (!element) return;
+    element.classList.remove('visible', 'fade-out', 'final-reveal', 'message-stage', 'ending');
+    element.setAttribute('aria-hidden', 'true');
+  });
+  if (envelope) envelope.classList.remove('open');
+  if (letterPrompt) letterPrompt.classList.remove('pulse');
+  if (letterLine1) letterLine1.classList.remove('visible');
+  if (letterLine2) letterLine2.classList.remove('visible');
+  if (letterCloseBtn) letterCloseBtn.classList.remove('visible');
+  if (poemContinue) poemContinue.classList.remove('visible');
+  if (mysteryGift) mysteryGift.classList.remove('open', 'rose-rising', 'rose-bloomed', 'message-visible');
+  if (mysteryGiftContinue) mysteryGiftContinue.classList.remove('visible');
+  if (heartStage) {
+    heartStage.classList.remove('revealed', 'quiet');
+    heartStage.style.opacity = '';
+    heartStage.style.filter = '';
+  }
+  if (heartShell) {
+    heartShell.style.opacity = '';
+    heartShell.style.transform = '';
+  }
+  if (centerBeacon) {
+    centerBeacon.classList.remove('visible');
+    centerBeacon.style.opacity = '';
+  }
+  if (birthdayScreen) {
+    birthdayScreen.classList.remove('fade-out');
+    birthdayScreen.style.opacity = '';
+    birthdayScreen.style.pointerEvents = '';
+  }
+  if (startButton) {
+    startButton.disabled = false;
+    startButton.style.opacity = '';
+    startButton.style.pointerEvents = '';
+  }
+  if (replayButton) replayButton.classList.remove('visible');
+  if (replayTitle) replayTitle.classList.remove('glow');
+  window.scrollTo(0, 0);
+}
+
+if (replayButton) replayButton.addEventListener('click', replayJourney);
 
 /* =========================================================
    GLOBAL STATE (declared first to avoid TDZ)
