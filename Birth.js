@@ -67,7 +67,7 @@ function initPerformanceMonitoring() {
     if (fpsHistory.length > 60) fpsHistory.shift(); // Keep last 60 frames
 
     // Check FPS every 2 seconds
-    if (fpsHistory.length >= 120) {
+    if (fpsHistory.length >= 60) {
       const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
       adaptQuality(avgFps);
     }
@@ -371,12 +371,12 @@ function createDust() {
 
     dust.style.setProperty(
       '--dx',
-      `${(Math.random() - 0.5) * 120}px`
+      `${(Math.random() - 0.5) * 80}px`
     );
 
     dust.style.setProperty(
       '--dy',
-      `${-Math.random() * 180 - 30}px`
+      `${-Math.random() * 120 - 20}px`
     );
 
     dust.style.setProperty(
@@ -429,7 +429,7 @@ function createHeartParticles() {
 
     p.style.setProperty(
       '--orbitDur',
-      `${Math.random() * 7 + 9}s`
+      `${Math.random() * 9 + 13}s`
     );
 
     p.style.left =
@@ -456,17 +456,17 @@ function createHeartParticles() {
 
     p.style.setProperty(
       '--dx',
-      `${(Math.random() - 0.5) * 130}px`
+      `${(Math.random() - 0.5) * 90}px`
     );
 
     p.style.setProperty(
       '--dy',
-      `${-Math.random() * 190 - 20}px`
+      `${-Math.random() * 130 - 20}px`
     );
 
     p.style.setProperty(
       '--riseDur',
-      `${Math.random() * 4 + 4}s`
+      `${Math.random() * 5 + 7}s`
     );
 
     p.style.left =
@@ -500,12 +500,12 @@ function createSparkBurst() {
 
     spark.style.setProperty(
       '--sx',
-      `${(Math.random() - 0.5) * 120}px`
+      `${(Math.random() - 0.5) * 80}px`
     );
 
     spark.style.setProperty(
       '--sy',
-      `${(Math.random() - 0.5) * 120}px`
+      `${(Math.random() - 0.5) * 100}px`
     );
 
     spark.style.animationDelay =
@@ -593,12 +593,12 @@ function createHeartPetalSpiral() {
 
     petal.style.setProperty(
       '--dx',
-      `${Math.cos(angle) * 90}px`
+      `${Math.cos(angle) * 60}px`
     );
 
     petal.style.setProperty(
       '--dy',
-      `${Math.sin(angle) * 90}px`
+      `${Math.sin(angle) * 60}px`
     );
 
     petal.style.animationDelay =
@@ -988,6 +988,7 @@ function showMessageScene() {
   // Show message scene
   if (messageScene) {
     messageScene.classList.add('visible');
+    messageScene.setAttribute('aria-hidden', 'false');
   }
 
   // Show first message line
@@ -1024,18 +1025,25 @@ function transitionToFinalMessage() {
   // Fade out message scene
   if (messageScene) {
     messageScene.classList.add('fade-out');
+    messageScene.setAttribute('aria-hidden', 'true');
   }
 
   // Show the letter scene after the journey
   trackTimeout(() => {
+    cleanupSceneEffects('.floating-heart, .glowing-flower');
     showLetterScene();
   }, 2000);
+}
+
+function cleanupSceneEffects(selector) {
+  document.querySelectorAll(selector).forEach(element => element.remove());
 }
 
 function showLetterScene() {
   // Show letter scene
   if (letterScene) {
     letterScene.classList.add('visible');
+    letterScene.setAttribute('aria-hidden', 'false');
   }
 
   // Show first letter line
@@ -1098,6 +1106,7 @@ function showLetterContent() {
   // Show letter content scene
   if (letterContentScene) {
     letterContentScene.classList.add('visible');
+    letterContentScene.setAttribute('aria-hidden', 'false');
   }
 
   // Letter content paragraphs for typewriter-style reveal
@@ -1223,6 +1232,7 @@ function closeLetterAndShowMysteryGift() {
 
   // Show the gift after the letter fades
   trackTimeout(() => {
+    cleanupSceneEffects('.letter-heart, .letter-sparkle');
     showMysteryGift();
   }, 1000);
 }
@@ -1371,11 +1381,11 @@ function createFloatingHearts() {
     // Drift amount
     const dx = (Math.random() - 0.5) * 200;
     const dy = -Math.random() * 150 - 50;
-    heart.style.setProperty('--sx', `${dx}px`);
-    heart.style.setProperty('--sy', `${dy}px`);
+    heart.style.setProperty('--sx', `${dx * 0.6}px`);
+    heart.style.setProperty('--sy', `${dy * 0.6}px`);
 
     // Vary animation duration: 10-14s
-    const duration = 10 + Math.random() * 4;
+    const duration = 14 + Math.random() * 5;
     heart.style.animationDuration = `${duration}s`;
 
     // Stagger start
@@ -1414,11 +1424,11 @@ function createGlowingFlowers() {
     // Drift amount
     const dx = (Math.random() - 0.5) * 120;
     const dy = -Math.random() * 100 - 30;
-    flower.style.setProperty('--sx', `${dx}px`);
-    flower.style.setProperty('--sy', `${dy}px`);
+    flower.style.setProperty('--sx', `${dx * 0.6}px`);
+    flower.style.setProperty('--sy', `${dy * 0.6}px`);
 
     // Vary animation duration: 8-12s
-    const duration = 8 + Math.random() * 4;
+    const duration = 12 + Math.random() * 5;
     flower.style.animationDuration = `${duration}s`;
 
     // Stagger start
@@ -1457,8 +1467,8 @@ function createAmbientSparkles() {
     sparkle.style.top = `${Math.random() * 100}%`;
 
     // Very slow, gentle drift
-    const dx = (Math.random() - 0.5) * 200;
-    const dy = -Math.random() * 300 - 100;
+    const dx = (Math.random() - 0.5) * 120;
+    const dy = -Math.random() * 180 - 70;
     sparkle.style.setProperty('--dx', `${dx}px`);
     sparkle.style.setProperty('--dy', `${dy}px`);
 
@@ -1499,8 +1509,8 @@ function createLetterHearts() {
     heart.style.top = `${startY}%`;
 
     // Drift amount - gentle floating around letter
-    const dx = (Math.random() - 0.5) * 180;
-    const dy = -Math.random() * 200 - 50;
+    const dx = (Math.random() - 0.5) * 110;
+    const dy = -Math.random() * 140 - 40;
     heart.style.setProperty('--sx', `${dx}px`);
     heart.style.setProperty('--sy', `${dy}px`);
 
@@ -1542,13 +1552,13 @@ function createLetterSparkles() {
     sparkle.style.top = `${startY}%`;
 
     // Drift amount
-    const dx = (Math.random() - 0.5) * 150;
-    const dy = -Math.random() * 180 - 30;
+    const dx = (Math.random() - 0.5) * 90;
+    const dy = -Math.random() * 120 - 20;
     sparkle.style.setProperty('--sx', `${dx}px`);
     sparkle.style.setProperty('--sy', `${dy}px`);
 
     // Vary animation duration: 8-12s
-    const duration = 8 + Math.random() * 4;
+    const duration = 12 + Math.random() * 5;
     sparkle.style.animationDuration = `${duration}s`;
 
     // Stagger start
