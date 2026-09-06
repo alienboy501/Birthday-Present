@@ -19,15 +19,16 @@ const PERFORMANCE = {
 
 const isLowPower =
   (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
-  (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  (navigator.deviceMemory && navigator.deviceMemory <= 4) ||
+  (window.matchMedia && window.matchMedia('(max-width: 600px)').matches);
 
 if (isLowPower) {
-  PERFORMANCE.stars = 55;
-  PERFORMANCE.dust = 45;
-  PERFORMANCE.heartOrbit = 28;
-  PERFORMANCE.heartRise = 20;
+  PERFORMANCE.stars = 40;
+  PERFORMANCE.dust = 30;
+  PERFORMANCE.heartOrbit = 18;
+  PERFORMANCE.heartRise = 12;
   PERFORMANCE.spiralPetals = 90;
-  PERFORMANCE.ambientSparkles = 8;
+  PERFORMANCE.ambientSparkles = 4;
 }
 
 /* =========================================================
@@ -39,6 +40,7 @@ let fpsHistory = [];
 let lastFrameTime = performance.now();
 let currentQualityLevel = isLowPower ? 1 : 0; // 0 = high, 1 = medium, 2 = low
 let performanceMonitoringActive = false;
+let performanceFrameId = null;
 
 // Object pools for particle reuse
 const particlePools = {
@@ -74,11 +76,11 @@ function initPerformanceMonitoring() {
 
     lastFrameTime = now;
     if (performanceMonitoringActive) {
-      requestAnimationFrame(measureFPS);
+      performanceFrameId = requestAnimationFrame(measureFPS);
     }
   }
 
-  requestAnimationFrame(measureFPS);
+  performanceFrameId = requestAnimationFrame(measureFPS);
 }
 
 function adaptQuality(avgFps) {
@@ -127,6 +129,10 @@ function applyQualityLevel(level) {
 
 function stopPerformanceMonitoring() {
   performanceMonitoringActive = false;
+  if (performanceFrameId !== null) {
+    cancelAnimationFrame(performanceFrameId);
+    performanceFrameId = null;
+  }
 }
 
 // Object pool functions
@@ -980,9 +986,11 @@ function showMessageScene() {
   if (heartStage) {
     heartStage.style.opacity = '0';
     heartStage.style.pointerEvents = 'none';
+    heartStage.classList.add('effects-stopped');
   }
   if (centerBeacon) {
     centerBeacon.style.opacity = '0';
+    centerBeacon.classList.remove('visible');
   }
 
   // Show message scene
@@ -1030,7 +1038,7 @@ function transitionToFinalMessage() {
 
   // Show the letter scene after the journey
   trackTimeout(() => {
-    cleanupSceneEffects('.floating-heart, .glowing-flower');
+    cleanupSceneEffects('.floating-heart, .glowing-flower, .ambient-sparkle');
     showLetterScene();
   }, 2000);
 }
@@ -1069,13 +1077,17 @@ function showLetterScene() {
 
   // Envelope interaction
   if (envelope) {
+    envelope.removeEventListener('click', openEnvelope);
+    envelope.removeEventListener('keydown', handleEnvelopeKeydown);
     envelope.addEventListener('click', openEnvelope);
-    envelope.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openEnvelope();
-      }
-    });
+    envelope.addEventListener('keydown', handleEnvelopeKeydown);
+  }
+}
+
+function handleEnvelopeKeydown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    openEnvelope();
   }
 }
 
@@ -1083,6 +1095,7 @@ function openEnvelope() {
   // Remove event listeners to prevent double-trigger
   if (envelope) {
     envelope.removeEventListener('click', openEnvelope);
+    envelope.removeEventListener('keydown', handleEnvelopeKeydown);
     envelope.classList.add('open');
   }
 
@@ -1094,6 +1107,7 @@ function openEnvelope() {
   // Fade out letter scene
   if (letterScene) {
     letterScene.classList.add('fade-out');
+    letterScene.setAttribute('aria-hidden', 'true');
   }
 
   // Show letter content scene
@@ -1103,6 +1117,8 @@ function openEnvelope() {
 }
 
 function showLetterContent() {
+  clearLetterRevealTimers();
+
   // Show letter content scene
   if (letterContentScene) {
     letterContentScene.classList.add('visible');
@@ -1148,8 +1164,8 @@ function showLetterContent() {
   if (letterText) {
     letterText.textContent = '';
     letterParagraphs.forEach((paragraph, index) => {
-      const delay = 400 + index * 350; // Staggered reveal
-      trackTimeout(() => {
+      const delay = 180 + index * 220;
+      trackLetterTimeout(() => {
         const p = document.createElement('p');
         p.className = 'letter-paragraph';
         p.style.opacity = '0';
@@ -1158,7 +1174,7 @@ function showLetterContent() {
         letterText.appendChild(p);
 
         // Animate in
-        trackTimeout(() => {
+        trackLetterTimeout(() => {
           p.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
           p.style.opacity = '1';
           p.style.transform = 'translateY(0)';
@@ -1167,40 +1183,36 @@ function showLetterContent() {
     });
   }
 
-  // Create floating hearts around the letter
-  trackTimeout(() => {
-    createLetterHearts();
-  }, 800);
-
-  // Create sparkles around the letter
-  trackTimeout(() => {
-    createLetterSparkles();
-  }, 1000);
-
-  // Show continue button after letter-opening animation finishes
-  // Letter scene fades out (1000ms) + paper animation (800ms) = ~1800ms
-  trackTimeout(() => {
+  const finalRevealDelay = 180 + (letterParagraphs.length - 1) * 220 + 700;
+  trackLetterTimeout(() => {
     if (letterCloseBtn) {
       letterCloseBtn.classList.add('visible');
     }
-  }, 1800);
+  }, finalRevealDelay);
 
   // Set up close button handler
   if (letterCloseBtn) {
+    letterCloseBtn.removeEventListener('click', closeLetterAndShowMysteryGift);
+    letterCloseBtn.removeEventListener('keydown', handleLetterCloseKeydown);
     letterCloseBtn.addEventListener('click', closeLetterAndShowMysteryGift);
-    letterCloseBtn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        closeLetterAndShowMysteryGift();
-      }
-    });
+    letterCloseBtn.addEventListener('keydown', handleLetterCloseKeydown);
+  }
+}
+
+function handleLetterCloseKeydown(event) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    closeLetterAndShowMysteryGift();
   }
 }
 
 function closeLetterAndShowMysteryGift() {
+  clearLetterRevealTimers();
+
   // Remove event listener to prevent double-trigger
   if (letterCloseBtn) {
     letterCloseBtn.removeEventListener('click', closeLetterAndShowMysteryGift);
+    letterCloseBtn.removeEventListener('keydown', handleLetterCloseKeydown);
   }
 
   // Fade out letter content scene
@@ -1240,23 +1252,31 @@ function closeLetterAndShowMysteryGift() {
 function showPoem() {
   if (!poemScene) return;
 
+  clearPoemContinueTimer();
   poemScene.classList.add('visible');
   poemScene.setAttribute('aria-hidden', 'false');
 
   poemScene.querySelectorAll('.poem-line').forEach((line, index) => {
-    line.style.setProperty('--poem-delay', `${250 + index * 170}ms`);
+    line.style.setProperty('--poem-delay', `${250 + index * 125}ms`);
   });
 
   if (poemContinue) {
+    poemContinue.classList.remove('visible');
     poemContinue.removeEventListener('click', continueFromPoem);
     poemContinue.addEventListener('click', continueFromPoem, { once: true });
-    trackTimeout(() => poemContinue.classList.add('visible'), 7000);
+    const lineRevealDuration = 700;
+    const lastLineDelay = 250 + (poemScene.querySelectorAll('.poem-line').length - 1) * 125;
+    poemContinueTimeout = trackTimeout(() => poemContinue.classList.add('visible'), lastLineDelay + lineRevealDuration + 250);
   }
 }
 
 function continueFromPoem() {
   if (!poemScene) return;
 
+  clearPoemContinueTimer();
+  if (poemContinue) {
+    poemContinue.removeEventListener('click', continueFromPoem);
+  }
   poemScene.classList.remove('visible');
   poemScene.classList.add('fade-out');
   poemScene.setAttribute('aria-hidden', 'true');
@@ -1270,12 +1290,20 @@ function continueFromPoem() {
 function showMysteryGift() {
   if (!mysteryGiftScene) return;
 
+  clearGiftRevealTimers();
   mysteryGiftScene.classList.add('visible');
   mysteryGiftScene.setAttribute('aria-hidden', 'false');
 
   if (mysteryGift) {
+    mysteryGift.removeEventListener('click', openMysteryGift);
+    mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
     mysteryGift.addEventListener('click', openMysteryGift, { once: true });
     mysteryGift.addEventListener('keydown', handleMysteryGiftKeydown);
+  }
+
+  if (mysteryGiftContinue) {
+    mysteryGiftContinue.removeEventListener('click', continueToPoem);
+    mysteryGiftContinue.addEventListener('click', continueToPoem);
   }
 }
 
@@ -1292,19 +1320,19 @@ function openMysteryGift() {
   mysteryGift.classList.add('open');
   mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
 
-  trackTimeout(() => {
+  trackGiftTimeout(() => {
     mysteryGift.classList.add('rose-rising');
   }, 900);
 
-  trackTimeout(() => {
+  trackGiftTimeout(() => {
     mysteryGift.classList.add('rose-bloomed');
   }, 1800);
 
-  trackTimeout(() => {
+  trackGiftTimeout(() => {
     mysteryGift.classList.add('message-visible');
   }, 3000);
 
-  trackTimeout(() => {
+  trackGiftTimeout(() => {
     if (mysteryGiftContinue) {
       mysteryGiftContinue.classList.add('visible');
       mysteryGiftContinue.focus();
@@ -1315,6 +1343,14 @@ function openMysteryGift() {
 function continueToPoem() {
   if (!mysteryGiftScene) return;
 
+  clearGiftRevealTimers();
+  if (mysteryGift) {
+    mysteryGift.removeEventListener('click', openMysteryGift);
+    mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
+  }
+  if (mysteryGiftContinue) {
+    mysteryGiftContinue.removeEventListener('click', continueToPoem);
+  }
   mysteryGiftScene.classList.add('fade-out');
   mysteryGiftScene.setAttribute('aria-hidden', 'true');
 
@@ -1403,7 +1439,7 @@ function createFloatingHearts() {
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.floating-heart').forEach(h => h.classList.add('visible'));
+    messageScene.querySelectorAll('.floating-heart').forEach(h => h.classList.add('visible'));
   }, 50);
 }
 
@@ -1446,7 +1482,7 @@ function createGlowingFlowers() {
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.glowing-flower').forEach(f => f.classList.add('visible'));
+    messageScene.querySelectorAll('.glowing-flower').forEach(f => f.classList.add('visible'));
   }, 50);
 }
 
@@ -1585,7 +1621,7 @@ function createLetterSparkles() {
    ========================================================= */
 
 function createCelebrationBursts() {
-  const count = 8;
+  const count = 5;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1614,7 +1650,7 @@ function createCelebrationBursts() {
 
   // Cleanup
   trackTimeout(() => {
-    fragment.querySelectorAll('.celebration-burst').forEach(b => b.remove());
+    document.querySelectorAll('.celebration-burst').forEach(b => b.remove());
   }, 2000);
 }
 
@@ -1795,6 +1831,7 @@ function showCelebrationScene() {
   trackTimeout(() => {
     finalMessage.classList.add('message-stage');
     if (celebrationTitle) celebrationTitle.classList.add('glow');
+    createCelebrationBursts();
   }, 600);
 
   trackTimeout(() => {
@@ -1808,6 +1845,8 @@ function showCelebrationScene() {
 
 function replayJourney() {
   const replayTitle = document.getElementById('celebrationTitle');
+  clearLetterRevealTimers();
+  clearGiftRevealTimers();
   allTimeouts.forEach(id => clearTimeout(id));
   allIntervals.forEach(id => clearInterval(id));
   allTimeouts = [];
@@ -1825,15 +1864,39 @@ function replayJourney() {
     element.setAttribute('aria-hidden', 'true');
   });
   if (envelope) envelope.classList.remove('open');
+  if (envelope) envelope.removeEventListener('keydown', handleEnvelopeKeydown);
   if (letterPrompt) letterPrompt.classList.remove('pulse');
   if (letterLine1) letterLine1.classList.remove('visible');
   if (letterLine2) letterLine2.classList.remove('visible');
-  if (letterCloseBtn) letterCloseBtn.classList.remove('visible');
+  if (letterCloseBtn) {
+    letterCloseBtn.classList.remove('visible');
+    letterCloseBtn.removeEventListener('click', closeLetterAndShowMysteryGift);
+    letterCloseBtn.removeEventListener('keydown', handleLetterCloseKeydown);
+  }
+  if (letterContentScene) {
+    letterContentScene.style.opacity = '';
+    letterContentScene.style.pointerEvents = '';
+  }
+  if (letterScene) {
+    letterScene.style.opacity = '';
+    letterScene.style.pointerEvents = '';
+  }
+  if (letterPaper) {
+    letterPaper.style.transform = '';
+    letterPaper.style.opacity = '';
+  }
   if (poemContinue) poemContinue.classList.remove('visible');
   if (mysteryGift) mysteryGift.classList.remove('open', 'rose-rising', 'rose-bloomed', 'message-visible');
-  if (mysteryGiftContinue) mysteryGiftContinue.classList.remove('visible');
+  if (mysteryGift) {
+    mysteryGift.removeEventListener('click', openMysteryGift);
+    mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
+  }
+  if (mysteryGiftContinue) {
+    mysteryGiftContinue.classList.remove('visible');
+    mysteryGiftContinue.removeEventListener('click', continueToPoem);
+  }
   if (heartStage) {
-    heartStage.classList.remove('revealed', 'quiet');
+    heartStage.classList.remove('revealed', 'quiet', 'effects-stopped');
     heartStage.style.opacity = '';
     heartStage.style.filter = '';
   }
@@ -1869,6 +1932,41 @@ if (replayButton) replayButton.addEventListener('click', replayJourney);
 let heartbeatLoop;
 let allTimeouts = [];
 let allIntervals = [];
+let letterRevealTimeouts = [];
+let poemContinueTimeout;
+let giftRevealTimeouts = [];
+
+function trackLetterTimeout(fn, delay) {
+  const id = trackTimeout(fn, delay);
+  letterRevealTimeouts.push(id);
+  return id;
+}
+
+function clearLetterRevealTimers() {
+  letterRevealTimeouts.forEach(id => clearTimeout(id));
+  allTimeouts = allTimeouts.filter(id => !letterRevealTimeouts.includes(id));
+  letterRevealTimeouts = [];
+}
+
+function clearPoemContinueTimer() {
+  if (poemContinueTimeout) {
+    clearTimeout(poemContinueTimeout);
+    allTimeouts = allTimeouts.filter(id => id !== poemContinueTimeout);
+    poemContinueTimeout = null;
+  }
+}
+
+function trackGiftTimeout(fn, delay) {
+  const id = trackTimeout(fn, delay);
+  giftRevealTimeouts.push(id);
+  return id;
+}
+
+function clearGiftRevealTimers() {
+  giftRevealTimeouts.forEach(id => clearTimeout(id));
+  allTimeouts = allTimeouts.filter(id => !giftRevealTimeouts.includes(id));
+  giftRevealTimeouts = [];
+}
 
 /* =========================================================
    STARTUP
