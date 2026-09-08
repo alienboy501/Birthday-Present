@@ -2,34 +2,98 @@
    PERFORMANCE SETTINGS
    ========================================================= */
 
-const PERFORMANCE = {
-  stars: 70,
-  dust: 70,
-  heartOrbit: 38,
-  heartRise: 28,
-  spiralPetals: 110,
-  fireworks: 6,
-  lanterns: 10,
-  butterflies: 8,
-  blossoms: 14,
-  balloons: 6,
-  confetti: 24,
-  ambientSparkles: 12
-};
+const isMobile = Boolean(
+  window.matchMedia && window.matchMedia('(max-width: 768px)').matches
+) || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 const isLowPower =
   (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4) ||
   (window.matchMedia && window.matchMedia('(max-width: 600px)').matches);
 
-if (isLowPower) {
-  PERFORMANCE.stars = 40;
-  PERFORMANCE.dust = 30;
-  PERFORMANCE.heartOrbit = 18;
-  PERFORMANCE.heartRise = 12;
-  PERFORMANCE.spiralPetals = 90;
-  PERFORMANCE.ambientSparkles = 4;
-}
+const PERFORMANCE = (() => {
+  const desktop = {
+    stars: 70,
+    dust: 70,
+    heartOrbit: 38,
+    heartRise: 28,
+    spiralPetals: 110,
+    fireworks: 6,
+    lanterns: 10,
+    butterflies: 8,
+    blossoms: 14,
+    balloons: 6,
+    confetti: 24,
+    ambientSparkles: 12,
+    floatingHearts: 8,
+    glowingFlowers: 12,
+    letterHearts: 10,
+    letterSparkles: 15,
+    celebrationBursts: 5,
+    lightExplosions: 6,
+    magicSparkles: 25,
+    celebrationHearts: 12,
+    celebrationBalloons: 8
+  };
+
+  const mobile = {
+    stars: 42,
+    dust: 30,
+    heartOrbit: 20,
+    heartRise: 14,
+    spiralPetals: 70,
+    fireworks: 4,
+    lanterns: 6,
+    butterflies: 5,
+    blossoms: 8,
+    balloons: 4,
+    confetti: 14,
+    ambientSparkles: 8,
+    floatingHearts: 5,
+    glowingFlowers: 8,
+    letterHearts: 6,
+    letterSparkles: 8,
+    celebrationBursts: 3,
+    lightExplosions: 4,
+    magicSparkles: 14,
+    celebrationHearts: 8,
+    celebrationBalloons: 5
+  };
+
+  const lowPower = {
+    stars: 26,
+    dust: 18,
+    heartOrbit: 12,
+    heartRise: 8,
+    spiralPetals: 48,
+    fireworks: 3,
+    lanterns: 4,
+    butterflies: 3,
+    blossoms: 6,
+    balloons: 3,
+    confetti: 8,
+    ambientSparkles: 4,
+    floatingHearts: 4,
+    glowingFlowers: 6,
+    letterHearts: 4,
+    letterSparkles: 5,
+    celebrationBursts: 2,
+    lightExplosions: 2,
+    magicSparkles: 8,
+    celebrationHearts: 5,
+    celebrationBalloons: 3
+  };
+
+  const selectedProfile = isLowPower ? lowPower : isMobile ? mobile : desktop;
+
+  return {
+    ...desktop,
+    ...selectedProfile,
+    isMobile,
+    isLowPower,
+    fpsTarget: isLowPower ? 30 : isMobile ? 30 : 60
+  };
+})();
 
 /* =========================================================
    PERFORMANCE MONITORING & ADAPTIVE QUALITY
@@ -38,7 +102,6 @@ if (isLowPower) {
 // FPS monitoring
 let fpsHistory = [];
 let lastFrameTime = performance.now();
-let currentQualityLevel = isLowPower ? 1 : 0; // 0 = high, 1 = medium, 2 = low
 let performanceMonitoringActive = false;
 let performanceFrameId = null;
 
@@ -55,76 +118,30 @@ const particlePools = {
   ambientSparkle: []
 };
 
-const MAX_POOL_SIZE = 50;
+const MAX_POOL_SIZE = PERFORMANCE.isLowPower ? 24 : 50;
 
 function initPerformanceMonitoring() {
   if (performanceMonitoringActive) return;
   performanceMonitoringActive = true;
 
-  // FPS monitoring loop
-  function measureFPS(now) {
-    const delta = now - lastFrameTime;
+  const measureFPS = (now) => {
+    const delta = Math.max(now - lastFrameTime, 16);
     const fps = 1000 / delta;
-    fpsHistory.push(fps);
-    if (fpsHistory.length > 60) fpsHistory.shift(); // Keep last 60 frames
 
-    // Check FPS every 2 seconds
-    if (fpsHistory.length >= 60) {
-      const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
-      adaptQuality(avgFps);
+    fpsHistory.push(fps);
+    if (fpsHistory.length > 60) {
+      fpsHistory.shift();
     }
 
     lastFrameTime = now;
+
     if (performanceMonitoringActive) {
       performanceFrameId = requestAnimationFrame(measureFPS);
     }
-  }
-
-  performanceFrameId = requestAnimationFrame(measureFPS);
-}
-
-function adaptQuality(avgFps) {
-  // Target 55+ FPS on modern, 30+ on low-end
-  const targetFps = isLowPower ? 30 : 55;
-
-  if (avgFps < targetFps * 0.8 && currentQualityLevel < 2) {
-    // Performance degrading - reduce quality
-    currentQualityLevel++;
-    applyQualityLevel(currentQualityLevel);
-    console.log(`Performance: Reducing quality to level ${currentQualityLevel} (avg FPS: ${avgFps.toFixed(1)})`);
-  } else if (avgFps > targetFps * 1.1 && currentQualityLevel > 0) {
-    // Performance good - can increase quality
-    currentQualityLevel--;
-    applyQualityLevel(currentQualityLevel);
-    console.log(`Performance: Increasing quality to level ${currentQualityLevel} (avg FPS: ${avgFps.toFixed(1)})`);
-  }
-}
-
-function applyQualityLevel(level) {
-  const multipliers = {
-    0: { stars: 1.0, dust: 1.0, particles: 1.0, celebration: 1.0, ambient: 1.0 },
-    1: { stars: 0.7, dust: 0.6, particles: 0.7, celebration: 0.7, ambient: 0.6 },
-    2: { stars: 0.4, dust: 0.4, particles: 0.5, celebration: 0.5, ambient: 0.4 }
   };
 
-  const m = multipliers[level];
-
-  // Apply multipliers to PERFORMANCE settings (using base values)
-  PERFORMANCE.stars = Math.round(70 * m.stars);
-  PERFORMANCE.dust = Math.round(70 * m.dust);
-  PERFORMANCE.heartOrbit = Math.round(38 * m.particles);
-  PERFORMANCE.heartRise = Math.round(28 * m.particles);
-  PERFORMANCE.spiralPetals = Math.round(110 * m.particles);
-  PERFORMANCE.fireworks = Math.round(6 * m.celebration);
-  PERFORMANCE.lanterns = Math.round(10 * m.celebration);
-  PERFORMANCE.butterflies = Math.round(8 * m.celebration);
-  PERFORMANCE.blossoms = Math.round(14 * m.celebration);
-  PERFORMANCE.balloons = Math.round(6 * m.celebration);
-  PERFORMANCE.confetti = Math.round(24 * m.celebration);
-  PERFORMANCE.ambientSparkles = Math.round(12 * m.ambient);
-
-  // If already started, we could dynamically remove excess particles
-  // For now, this affects future particle creation
+  lastFrameTime = performance.now();
+  performanceFrameId = requestAnimationFrame(measureFPS);
 }
 
 function stopPerformanceMonitoring() {
@@ -220,6 +237,34 @@ function getFinalMessage() {
   return cachedFinalMessage;
 }
 
+const EFFECT_REMOVAL_SELECTORS = [
+  '.floating-heart',
+  '.glowing-flower',
+  '.ambient-sparkle',
+  '.letter-heart',
+  '.letter-sparkle',
+  '.celebration-burst',
+  '.magic-sparkle',
+  '.celebration-heart',
+  '.light-explosion',
+  '.celebration-balloon',
+  '.firework',
+  '.lantern',
+  '.butterfly',
+  '.blossom-petal',
+  '.balloon',
+  '.confetti',
+  '.spark',
+  '.petal-spiral',
+  '.transformation-pulse'
+].join(', ');
+
+function cleanupDynamicEffects(selector = EFFECT_REMOVAL_SELECTORS) {
+  document.querySelectorAll(selector).forEach((element) => {
+    element.remove();
+  });
+}
+
 /* =========================================================
    START BUTTON HANDLER
    ========================================================= */
@@ -235,9 +280,6 @@ function startCelebration() {
     // Add fade-out class for smooth cinematic transition
     birthdayScreen.classList.add('fade-out');
   }
-
-  // Initialize performance monitoring
-  initPerformanceMonitoring();
 
   trackTimeout(() => {
     beginMainSequence();
@@ -1281,6 +1323,8 @@ function continueFromPoem() {
   poemScene.classList.add('fade-out');
   poemScene.setAttribute('aria-hidden', 'true');
 
+  cleanupDynamicEffects('.floating-heart, .glowing-flower, .ambient-sparkle');
+
   trackTimeout(() => {
     poemScene.classList.remove('fade-out');
     showFinalMessage();
@@ -1401,7 +1445,7 @@ function startGrandReveal() {
    ========================================================= */
 
 function createFloatingHearts() {
-  const count = 8;
+  const count = PERFORMANCE.floatingHearts;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1444,7 +1488,7 @@ function createFloatingHearts() {
 }
 
 function createGlowingFlowers() {
-  const count = 12;
+  const count = PERFORMANCE.glowingFlowers;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1531,7 +1575,7 @@ function createAmbientSparkles() {
    ========================================================= */
 
 function createLetterHearts() {
-  const count = 10;
+  const count = PERFORMANCE.letterHearts;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1574,7 +1618,7 @@ function createLetterHearts() {
 }
 
 function createLetterSparkles() {
-  const count = 15;
+  const count = PERFORMANCE.letterSparkles;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1621,7 +1665,7 @@ function createLetterSparkles() {
    ========================================================= */
 
 function createCelebrationBursts() {
-  const count = 5;
+  const count = PERFORMANCE.celebrationBursts;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1655,7 +1699,7 @@ function createCelebrationBursts() {
 }
 
 function createLightExplosions() {
-  const count = 6;
+  const count = PERFORMANCE.lightExplosions;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1692,7 +1736,7 @@ function createLightExplosions() {
 }
 
 function createMagicSparkles() {
-  const count = 25;
+  const count = PERFORMANCE.magicSparkles;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1724,10 +1768,17 @@ function createMagicSparkles() {
   }
 
   document.body.appendChild(fragment);
+
+  trackTimeout(() => {
+    fragment.querySelectorAll('.magic-sparkle').forEach((sparkle) => {
+      sparkle.remove();
+      returnToPool('ambientSparkle', sparkle);
+    });
+  }, 6000);
 }
 
 function createFloatingHeartsCelebration() {
-  const count = 12;
+  const count = PERFORMANCE.celebrationHearts;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1770,7 +1821,7 @@ function createFloatingHeartsCelebration() {
 }
 
 function createCelebrationBalloons() {
-  const count = 8;
+  const count = PERFORMANCE.celebrationBalloons;
   const fragment = document.createDocumentFragment();
 
   const balloonColors = [
@@ -1847,16 +1898,17 @@ function replayJourney() {
   const replayTitle = document.getElementById('celebrationTitle');
   clearLetterRevealTimers();
   clearGiftRevealTimers();
+  clearPoemContinueTimer();
   allTimeouts.forEach(id => clearTimeout(id));
   allIntervals.forEach(id => clearInterval(id));
   allTimeouts = [];
   allIntervals = [];
   stopPerformanceMonitoring();
 
+  cleanupDynamicEffects();
   document.querySelectorAll('.star, .dust, .heart-particle').forEach(element => {
     element.classList.remove('visible', 'revealed', 'quiet');
   });
-  document.querySelectorAll('.celebration-burst, .magic-sparkle, .celebration-heart, .light-explosion, .celebration-balloon, .confetti, .firework').forEach(element => element.remove());
 
   [messageScene, letterScene, letterContentScene, poemScene, mysteryGiftScene, finalMessage].forEach(element => {
     if (!element) return;
