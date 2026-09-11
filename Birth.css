@@ -2027,6 +2027,7 @@ body::after {
   z-index: 2;
   padding: clamp(1.5rem, 6vw, 3rem) clamp(1rem, 6vw, 2.5rem);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   max-height: min(72vh, 680px);
 }
 
