@@ -3672,6 +3672,23 @@ button {
 
   .letter-paper {
     width: min(600px, 100%);
+    min-height: 280px;
+  }
+
+  .letter-inner {
+    padding: 1rem 0.9rem;
+    max-height: min(68vh, 520px);
+  }
+
+  .letter-text {
+    font-size: clamp(0.95rem, 3.8vw, 1.05rem);
+    line-height: 1.7;
+  }
+
+  .letter-continue-icon {
+    min-width: 122px;
+    height: 40px;
+    margin-top: 0.75rem;
   }
 
   .poem-card {

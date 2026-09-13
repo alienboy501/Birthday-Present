@@ -219,6 +219,10 @@ const celebrationLayer = document.body;
 const scene = document.querySelector('.birthday-container') || document.body;
 const centerBeacon = document.querySelector('.center-beacon') || document.createElement('div');
 
+// Small state guards to prevent duplicate scene re-renders or accidental re-entry.
+let hasShownLetterContent = false;
+let hasCompletedExperience = false;
+
 // Cache for frequently queried DOM elements to avoid repeated querySelectorAll calls
 let cachedStars = null;
 let cachedFinalMessage = null;
@@ -1090,6 +1094,11 @@ function cleanupSceneEffects(selector) {
 }
 
 function showLetterScene() {
+  // Guard against accidental re-entry while the scene is already active.
+  if (letterScene && letterScene.classList.contains('visible')) {
+    return;
+  }
+
   // Show letter scene
   if (letterScene) {
     letterScene.classList.add('visible');
@@ -1134,6 +1143,10 @@ function handleEnvelopeKeydown(event) {
 }
 
 function openEnvelope() {
+  if (letterContentScene && letterContentScene.classList.contains('visible')) {
+    return;
+  }
+
   // Remove event listeners to prevent double-trigger
   if (envelope) {
     envelope.removeEventListener('click', openEnvelope);
@@ -1160,6 +1173,12 @@ function openEnvelope() {
 
 function showLetterContent() {
   clearLetterRevealTimers();
+
+  if (letterContentScene && letterContentScene.classList.contains('visible')) {
+    return;
+  }
+
+  hasShownLetterContent = true;
 
   // Show letter content scene
   if (letterContentScene) {
@@ -1266,6 +1285,7 @@ function handleLetterCloseKeydown(event) {
 
 function closeLetterAndShowMysteryGift() {
   clearLetterRevealTimers();
+  hasShownLetterContent = false;
 
   // Remove event listener to prevent double-trigger
   if (letterCloseBtn) {
@@ -1424,6 +1444,12 @@ if (mysteryGiftContinue) {
 }
 
 function showFinalMessage() {
+  if (hasCompletedExperience) {
+    return;
+  }
+
+  hasCompletedExperience = true;
+
   // Show final message
   if (finalMessage) {
     finalMessage.classList.add('visible');
@@ -1953,6 +1979,8 @@ function replayJourney() {
     letterPaper.style.transform = '';
     letterPaper.style.opacity = '';
   }
+  hasShownLetterContent = false;
+  hasCompletedExperience = false;
   if (poemContinue) poemContinue.classList.remove('visible');
   if (mysteryGift) mysteryGift.classList.remove('open', 'rose-rising', 'rose-bloomed', 'message-visible');
   if (mysteryGift) {
