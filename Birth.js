@@ -17,17 +17,28 @@ const PERFORMANCE = {
   ambientSparkles: 12
 };
 
+const prefersReducedMotion =
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+const mobileScale = prefersReducedMotion ? 0.35 : isMobile ? 0.72 : 1;
+
 const isLowPower =
   (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
   (navigator.deviceMemory && navigator.deviceMemory <= 4);
 
-if (isLowPower) {
-  PERFORMANCE.stars = 55;
-  PERFORMANCE.dust = 45;
-  PERFORMANCE.heartOrbit = 28;
-  PERFORMANCE.heartRise = 20;
-  PERFORMANCE.spiralPetals = 90;
-  PERFORMANCE.ambientSparkles = 8;
+if (isLowPower || isMobile) {
+  PERFORMANCE.stars = Math.max(28, Math.round(PERFORMANCE.stars * 0.72));
+  PERFORMANCE.dust = Math.max(22, Math.round(PERFORMANCE.dust * 0.65));
+  PERFORMANCE.heartOrbit = Math.max(18, Math.round(PERFORMANCE.heartOrbit * mobileScale));
+  PERFORMANCE.heartRise = Math.max(14, Math.round(PERFORMANCE.heartRise * mobileScale));
+  PERFORMANCE.spiralPetals = Math.max(50, Math.round(PERFORMANCE.spiralPetals * mobileScale));
+  PERFORMANCE.fireworks = Math.max(3, Math.round(PERFORMANCE.fireworks * mobileScale));
+  PERFORMANCE.lanterns = Math.max(4, Math.round(PERFORMANCE.lanterns * mobileScale));
+  PERFORMANCE.butterflies = Math.max(3, Math.round(PERFORMANCE.butterflies * mobileScale));
+  PERFORMANCE.blossoms = Math.max(6, Math.round(PERFORMANCE.blossoms * mobileScale));
+  PERFORMANCE.balloons = Math.max(2, Math.round(PERFORMANCE.balloons * mobileScale));
+  PERFORMANCE.confetti = Math.max(12, Math.round(PERFORMANCE.confetti * mobileScale));
+  PERFORMANCE.ambientSparkles = Math.max(5, Math.round(PERFORMANCE.ambientSparkles * mobileScale));
 }
 
 /* =========================================================
@@ -59,26 +70,24 @@ function initPerformanceMonitoring() {
   if (performanceMonitoringActive) return;
   performanceMonitoringActive = true;
 
-  // FPS monitoring loop
   function measureFPS(now) {
+    if (!performanceMonitoringActive) return;
+
     const delta = now - lastFrameTime;
     const fps = 1000 / delta;
     fpsHistory.push(fps);
-    if (fpsHistory.length > 60) fpsHistory.shift(); // Keep last 60 frames
+    if (fpsHistory.length > 60) fpsHistory.shift();
 
-    // Check FPS every 2 seconds
     if (fpsHistory.length >= 120) {
       const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
       adaptQuality(avgFps);
     }
 
     lastFrameTime = now;
-    if (performanceMonitoringActive) {
-      requestAnimationFrame(measureFPS);
-    }
+    performanceRafId = requestAnimationFrame(measureFPS);
   }
 
-  requestAnimationFrame(measureFPS);
+  performanceRafId = requestAnimationFrame(measureFPS);
 }
 
 function adaptQuality(avgFps) {
@@ -127,6 +136,10 @@ function applyQualityLevel(level) {
 
 function stopPerformanceMonitoring() {
   performanceMonitoringActive = false;
+  if (performanceRafId) {
+    cancelAnimationFrame(performanceRafId);
+    performanceRafId = null;
+  }
 }
 
 // Object pool functions
@@ -146,7 +159,7 @@ function getPooledElement(type, className, createFn) {
     el.className = className; // Reset class in case it changed
     return el;
   }
-  return createFn();
+  return createFn(className);
 }
 
 function returnToPool(type, element) {
@@ -221,20 +234,24 @@ function getFinalMessage() {
 function startCelebration() {
   if (!startButton) return;
 
+  clearExperienceRuntime();
+  experienceStarted = true;
+  experienceSessionId += 1;
+  const sessionId = experienceSessionId;
+
   startButton.disabled = true;
   startButton.style.opacity = '0';
   startButton.style.pointerEvents = 'none';
 
   if (birthdayScreen) {
-    // Add fade-out class for smooth cinematic transition
     birthdayScreen.classList.add('fade-out');
   }
 
-  // Initialize performance monitoring
   initPerformanceMonitoring();
 
   trackTimeout(() => {
-    beginMainSequence();
+    if (sessionId !== experienceSessionId) return;
+    beginMainSequence(sessionId);
   }, 1000);
 }
 
@@ -242,7 +259,8 @@ if (startButton) {
   startButton.addEventListener('click', startCelebration);
 }
 
-function beginMainSequence() {
+function beginMainSequence(sessionId) {
+  if (sessionId !== experienceSessionId) return;
   scene.classList.add('ready');
   const stars = Array.from(getStars());
 
@@ -988,6 +1006,7 @@ function showMessageScene() {
   // Show message scene
   if (messageScene) {
     messageScene.classList.add('visible');
+    messageScene.setAttribute('aria-hidden', 'false');
   }
 
   // Show first message line
@@ -1024,6 +1043,7 @@ function transitionToFinalMessage() {
   // Fade out message scene
   if (messageScene) {
     messageScene.classList.add('fade-out');
+    messageScene.setAttribute('aria-hidden', 'true');
   }
 
   // Show the letter scene after the journey
@@ -1036,6 +1056,7 @@ function showLetterScene() {
   // Show letter scene
   if (letterScene) {
     letterScene.classList.add('visible');
+    letterScene.setAttribute('aria-hidden', 'false');
   }
 
   // Show first letter line
@@ -1059,24 +1080,24 @@ function showLetterScene() {
     }, 4500);
   }
 
-  // Envelope interaction
   if (envelope) {
-    envelope.addEventListener('click', openEnvelope);
-    envelope.addEventListener('keydown', (e) => {
+    envelope.onclick = openEnvelope;
+    envelope.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openEnvelope();
       }
-    });
+    };
   }
 }
 
 function openEnvelope() {
-  // Remove event listeners to prevent double-trigger
-  if (envelope) {
-    envelope.removeEventListener('click', openEnvelope);
-    envelope.classList.add('open');
-  }
+  if (!envelope || envelope.classList.contains('open')) return;
+
+  // Clear property handlers so rapid click and keyboard activation cannot queue twice.
+  envelope.onclick = null;
+  envelope.onkeydown = null;
+  envelope.classList.add('open');
 
   // Stop prompt pulse
   if (letterPrompt) {
@@ -1098,6 +1119,7 @@ function showLetterContent() {
   // Show letter content scene
   if (letterContentScene) {
     letterContentScene.classList.add('visible');
+    letterContentScene.setAttribute('aria-hidden', 'false');
   }
 
   // Letter content paragraphs for typewriter-style reveal
@@ -1176,23 +1198,23 @@ function showLetterContent() {
     }
   }, 1800);
 
-  // Set up close button handler
   if (letterCloseBtn) {
-    letterCloseBtn.addEventListener('click', closeLetterAndShowMysteryGift);
-    letterCloseBtn.addEventListener('keydown', (e) => {
+    letterCloseBtn.onclick = closeLetterAndShowMysteryGift;
+    letterCloseBtn.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         closeLetterAndShowMysteryGift();
       }
-    });
+    };
   }
 }
 
 function closeLetterAndShowMysteryGift() {
-  // Remove event listener to prevent double-trigger
-  if (letterCloseBtn) {
-    letterCloseBtn.removeEventListener('click', closeLetterAndShowMysteryGift);
-  }
+  if (!letterCloseBtn || !letterCloseBtn.classList.contains('visible')) return;
+
+  // Clear property handlers so rapid activation cannot queue the next scene twice.
+  letterCloseBtn.onclick = null;
+  letterCloseBtn.onkeydown = null;
 
   // Fade out letter content scene
   if (letterContentScene) {
@@ -1264,8 +1286,8 @@ function showMysteryGift() {
   mysteryGiftScene.setAttribute('aria-hidden', 'false');
 
   if (mysteryGift) {
-    mysteryGift.addEventListener('click', openMysteryGift, { once: true });
-    mysteryGift.addEventListener('keydown', handleMysteryGiftKeydown);
+    mysteryGift.onclick = openMysteryGift;
+    mysteryGift.onkeydown = handleMysteryGiftKeydown;
   }
 }
 
@@ -1280,7 +1302,8 @@ function openMysteryGift() {
   if (!mysteryGift || mysteryGift.classList.contains('open')) return;
 
   mysteryGift.classList.add('open');
-  mysteryGift.removeEventListener('keydown', handleMysteryGiftKeydown);
+  mysteryGift.onkeydown = null;
+  mysteryGift.onclick = null;
 
   trackTimeout(() => {
     mysteryGift.classList.add('rose-rising');
@@ -1314,7 +1337,7 @@ function continueToPoem() {
 }
 
 if (mysteryGiftContinue) {
-  mysteryGiftContinue.addEventListener('click', continueToPoem);
+  mysteryGiftContinue.onclick = continueToPoem;
 }
 
 function showFinalMessage() {
@@ -1357,6 +1380,7 @@ function startGrandReveal() {
 function createFloatingHearts() {
   const count = 8;
   const fragment = document.createDocumentFragment();
+  const hearts = [];
 
   for (let i = 0; i < count; i++) {
     const heart = document.createElement('span');
@@ -1387,19 +1411,21 @@ function createFloatingHearts() {
     heart.style.height = `${size}px`;
 
     fragment.appendChild(heart);
+    hearts.push(heart);
   }
 
   messageScene.appendChild(fragment);
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.floating-heart').forEach(h => h.classList.add('visible'));
+    hearts.forEach(heart => heart.classList.add('visible'));
   }, 50);
 }
 
 function createGlowingFlowers() {
   const count = 12;
   const fragment = document.createDocumentFragment();
+  const flowers = [];
 
   for (let i = 0; i < count; i++) {
     const flower = document.createElement('span');
@@ -1430,13 +1456,14 @@ function createGlowingFlowers() {
     flower.style.height = `${size}px`;
 
     fragment.appendChild(flower);
+    flowers.push(flower);
   }
 
   messageScene.appendChild(fragment);
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.glowing-flower').forEach(f => f.classList.add('visible'));
+    flowers.forEach(flower => flower.classList.add('visible'));
   }, 50);
 }
 
@@ -1487,6 +1514,7 @@ function createAmbientSparkles() {
 function createLetterHearts() {
   const count = 10;
   const fragment = document.createDocumentFragment();
+  const hearts = [];
 
   for (let i = 0; i < count; i++) {
     const heart = document.createElement('span');
@@ -1517,19 +1545,21 @@ function createLetterHearts() {
     heart.style.height = `${size}px`;
 
     fragment.appendChild(heart);
+    hearts.push(heart);
   }
 
   document.body.appendChild(fragment);
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.letter-heart').forEach(h => h.classList.add('visible'));
+    hearts.forEach(heart => heart.classList.add('visible'));
   }, 50);
 }
 
 function createLetterSparkles() {
   const count = 15;
   const fragment = document.createDocumentFragment();
+  const sparkles = [];
 
   for (let i = 0; i < count; i++) {
     const sparkle = document.createElement('span');
@@ -1560,13 +1590,14 @@ function createLetterSparkles() {
     sparkle.style.height = `${size}px`;
 
     fragment.appendChild(sparkle);
+    sparkles.push(sparkle);
   }
 
   document.body.appendChild(fragment);
 
   // Trigger visibility after adding to DOM
   trackTimeout(() => {
-    fragment.querySelectorAll('.letter-sparkle').forEach(s => s.classList.add('visible'));
+    sparkles.forEach(sparkle => sparkle.classList.add('visible'));
   }, 50);
 }
 
@@ -1577,6 +1608,7 @@ function createLetterSparkles() {
 function createCelebrationBursts() {
   const count = 8;
   const fragment = document.createDocumentFragment();
+  const bursts = [];
 
   for (let i = 0; i < count; i++) {
     const burst = document.createElement('span');
@@ -1598,19 +1630,21 @@ function createCelebrationBursts() {
     burst.style.animationDuration = `${1 + Math.random() * 0.5}s`;
 
     fragment.appendChild(burst);
+    bursts.push(burst);
   }
 
   document.body.appendChild(fragment);
 
   // Cleanup
   trackTimeout(() => {
-    fragment.querySelectorAll('.celebration-burst').forEach(b => b.remove());
+    bursts.forEach(burst => burst.remove());
   }, 2000);
 }
 
 function createLightExplosions() {
   const count = 6;
   const fragment = document.createDocumentFragment();
+  const explosions = [];
 
   for (let i = 0; i < count; i++) {
     const explosion = document.createElement('span');
@@ -1636,12 +1670,13 @@ function createLightExplosions() {
     explosion.style.animationDuration = `${1.2 + Math.random() * 0.6}s`;
 
     fragment.appendChild(explosion);
+    explosions.push(explosion);
   }
 
   document.body.appendChild(fragment);
 
   trackTimeout(() => {
-    fragment.querySelectorAll('.light-explosion').forEach(e => e.remove());
+    explosions.forEach(explosion => explosion.remove());
   }, 2500);
 }
 
@@ -1683,6 +1718,7 @@ function createMagicSparkles() {
 function createFloatingHeartsCelebration() {
   const count = 12;
   const fragment = document.createDocumentFragment();
+  const hearts = [];
 
   for (let i = 0; i < count; i++) {
     const heart = document.createElement('span');
@@ -1713,19 +1749,21 @@ function createFloatingHeartsCelebration() {
     heart.style.height = `${size}px`;
 
     fragment.appendChild(heart);
+    hearts.push(heart);
   }
 
   document.body.appendChild(fragment);
 
   // Trigger visibility
   trackTimeout(() => {
-    fragment.querySelectorAll('.celebration-heart').forEach(h => h.classList.add('visible'));
+    hearts.forEach(heart => heart.classList.add('visible'));
   }, 50);
 }
 
 function createCelebrationBalloons() {
   const count = 8;
   const fragment = document.createDocumentFragment();
+  const balloons = [];
 
   const balloonColors = [
     { color: '#ff6b9d', dark: '#e84a7a' },
@@ -1759,13 +1797,14 @@ function createCelebrationBalloons() {
     balloon.style.animationDelay = `${Math.random() * 2}s`;
 
     fragment.appendChild(balloon);
+    balloons.push(balloon);
   }
 
   document.body.appendChild(fragment);
 
   // Cleanup after they float off screen
   trackTimeout(() => {
-    fragment.querySelectorAll('.celebration-balloon').forEach(b => b.remove());
+    balloons.forEach(balloon => balloon.remove());
   }, 30000);
 }
 
@@ -1796,34 +1835,77 @@ function showCelebrationScene() {
   }, 4700);
 }
 
+function clearExperienceEffects() {
+  document.querySelectorAll('.floating-heart, .glowing-flower, .letter-heart, .letter-sparkle, .celebration-burst, .magic-sparkle, .celebration-heart, .light-explosion, .celebration-balloon, .transformation-pulse, .petal-spiral, .ambient-sparkle, .spark, .firework, .lantern, .butterfly, .blossom-petal, .balloon, .confetti').forEach(element => element.remove());
+}
+
 function replayJourney() {
-  const replayTitle = document.getElementById('celebrationTitle');
-  allTimeouts.forEach(id => clearTimeout(id));
-  allIntervals.forEach(id => clearInterval(id));
-  allTimeouts = [];
-  allIntervals = [];
-  stopPerformanceMonitoring();
+  resetExperienceForReplay();
+  if (birthdayScreen) {
+    birthdayScreen.classList.remove('fade-out');
+    birthdayScreen.style.opacity = '0';
+    birthdayScreen.style.pointerEvents = 'none';
+  }
+  if (startButton) {
+    startButton.disabled = true;
+    startButton.style.opacity = '0';
+    startButton.style.pointerEvents = 'none';
+  }
+
+  experienceStarted = true;
+  experienceSessionId += 1;
+  const sessionId = experienceSessionId;
+
+  initPerformanceMonitoring();
+  trackTimeout(() => {
+    if (sessionId !== experienceSessionId) return;
+    beginMainSequence(sessionId);
+  }, 150);
+}
+
+function resetExperienceForReplay() {
+  clearExperienceRuntime();
+  clearExperienceEffects();
 
   document.querySelectorAll('.star, .dust, .heart-particle').forEach(element => {
     element.classList.remove('visible', 'revealed', 'quiet');
+    element.style.opacity = '';
   });
-  document.querySelectorAll('.celebration-burst, .magic-sparkle, .celebration-heart, .light-explosion, .celebration-balloon, .confetti, .firework').forEach(element => element.remove());
 
   [messageScene, letterScene, letterContentScene, poemScene, mysteryGiftScene, finalMessage].forEach(element => {
     if (!element) return;
     element.classList.remove('visible', 'fade-out', 'final-reveal', 'message-stage', 'ending');
+    element.style.opacity = '';
+    element.style.pointerEvents = '';
     element.setAttribute('aria-hidden', 'true');
   });
+
   if (envelope) envelope.classList.remove('open');
+  if (envelope) envelope.onclick = null;
   if (letterPrompt) letterPrompt.classList.remove('pulse');
   if (letterLine1) letterLine1.classList.remove('visible');
   if (letterLine2) letterLine2.classList.remove('visible');
-  if (letterCloseBtn) letterCloseBtn.classList.remove('visible');
-  if (poemContinue) poemContinue.classList.remove('visible');
-  if (mysteryGift) mysteryGift.classList.remove('open', 'rose-rising', 'rose-bloomed', 'message-visible');
-  if (mysteryGiftContinue) mysteryGiftContinue.classList.remove('visible');
+  if (letterCloseBtn) {
+    letterCloseBtn.classList.remove('visible');
+    letterCloseBtn.onclick = null;
+    letterCloseBtn.onkeydown = null;
+  }
+  if (poemContinue) {
+    poemContinue.classList.remove('visible');
+    poemContinue.onclick = null;
+  }
+  if (mysteryGift) {
+    mysteryGift.classList.remove('open', 'rose-rising', 'rose-bloomed', 'message-visible');
+    mysteryGift.onclick = null;
+    mysteryGift.onkeydown = null;
+  }
+  if (mysteryGiftContinue) {
+    mysteryGiftContinue.classList.remove('visible');
+    mysteryGiftContinue.onclick = null;
+  }
+
   if (heartStage) {
-    heartStage.classList.remove('revealed', 'quiet');
+    heartStage.classList.remove('revealed', 'quiet', 'beating');
     heartStage.style.opacity = '';
     heartStage.style.filter = '';
   }
@@ -1840,12 +1922,8 @@ function replayJourney() {
     birthdayScreen.style.opacity = '';
     birthdayScreen.style.pointerEvents = '';
   }
-  if (startButton) {
-    startButton.disabled = false;
-    startButton.style.opacity = '';
-    startButton.style.pointerEvents = '';
-  }
   if (replayButton) replayButton.classList.remove('visible');
+  const replayTitle = document.getElementById('celebrationTitle');
   if (replayTitle) replayTitle.classList.remove('glow');
   window.scrollTo(0, 0);
 }
@@ -1859,6 +1937,9 @@ if (replayButton) replayButton.addEventListener('click', replayJourney);
 let heartbeatLoop;
 let allTimeouts = [];
 let allIntervals = [];
+let performanceRafId = null;
+let experienceSessionId = 0;
+let experienceStarted = false;
 
 /* =========================================================
    STARTUP
@@ -1869,22 +1950,54 @@ createDust();
 createHeartParticles();
 
 // Helper to track timeouts for cleanup
+function clearExperienceRuntime() {
+  allTimeouts.forEach(id => clearTimeout(id));
+  allIntervals.forEach(id => clearInterval(id));
+  allTimeouts = [];
+  allIntervals = [];
+  stopPerformanceMonitoring();
+}
+
 function trackTimeout(fn, delay) {
-  const id = setTimeout(fn, delay);
+  const id = setTimeout(() => {
+    allTimeouts = allTimeouts.filter(value => value !== id);
+    fn();
+  }, delay);
   allTimeouts.push(id);
   return id;
 }
 
 // Helper to track intervals for cleanup
 function trackInterval(fn, delay) {
-  const id = setInterval(fn, delay);
+  const id = setInterval(() => {
+    if (!experienceStarted) {
+      clearInterval(id);
+      allIntervals = allIntervals.filter(value => value !== id);
+      return;
+    }
+    fn();
+  }, delay);
   allIntervals.push(id);
   return id;
 }
 
+if (document.visibilityState !== 'visible') {
+  stopPerformanceMonitoring();
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopPerformanceMonitoring();
+    return;
+  }
+
+  if (experienceStarted) {
+    initPerformanceMonitoring();
+  }
+});
+
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
-  allTimeouts.forEach(id => clearTimeout(id));
-  allIntervals.forEach(id => clearInterval(id));
-  stopPerformanceMonitoring();
+  clearExperienceRuntime();
+  clearExperienceEffects();
 });
