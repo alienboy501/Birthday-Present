@@ -994,6 +994,11 @@ function launchTransformationPulse() {
    ========================================================= */
 
 function showMessageScene() {
+  if (letterScene) {
+    letterScene.classList.remove('visible', 'fade-out');
+    letterScene.setAttribute('aria-hidden', 'true');
+  }
+
   // Fade out heart stage
   if (heartStage) {
     heartStage.style.opacity = '0';
@@ -1040,6 +1045,8 @@ function showMessageScene() {
 }
 
 function transitionToFinalMessage() {
+  document.querySelectorAll('.floating-heart, .glowing-flower').forEach(element => element.remove());
+
   // Fade out message scene
   if (messageScene) {
     messageScene.classList.add('fade-out');
@@ -1048,13 +1055,22 @@ function transitionToFinalMessage() {
 
   // Show the letter scene after the journey
   trackTimeout(() => {
+    if (messageScene) {
+      messageScene.classList.remove('visible', 'fade-out');
+    }
     showLetterScene();
   }, 2000);
 }
 
 function showLetterScene() {
+  if (letterScene && (letterScene.classList.contains('fade-out') || envelope?.classList.contains('open'))) {
+    return;
+  }
+
   // Show letter scene
   if (letterScene) {
+    letterScene.style.opacity = '';
+    letterScene.style.pointerEvents = '';
     letterScene.classList.add('visible');
     letterScene.setAttribute('aria-hidden', 'false');
   }
@@ -1106,7 +1122,11 @@ function openEnvelope() {
 
   // Fade out letter scene
   if (letterScene) {
+    letterScene.classList.remove('visible');
     letterScene.classList.add('fade-out');
+    letterScene.style.opacity = '0';
+    letterScene.style.pointerEvents = 'none';
+    letterScene.setAttribute('aria-hidden', 'true');
   }
 
   // Show letter content scene
@@ -1116,6 +1136,12 @@ function openEnvelope() {
 }
 
 function showLetterContent() {
+  if (letterScene) {
+    letterScene.classList.remove('visible');
+    letterScene.classList.add('fade-out');
+    letterScene.setAttribute('aria-hidden', 'true');
+  }
+
   // Show letter content scene
   if (letterContentScene) {
     letterContentScene.classList.add('visible');
@@ -1215,6 +1241,7 @@ function closeLetterAndShowMysteryGift() {
   // Clear property handlers so rapid activation cannot queue the next scene twice.
   letterCloseBtn.onclick = null;
   letterCloseBtn.onkeydown = null;
+  document.querySelectorAll('.letter-heart, .letter-sparkle').forEach(element => element.remove());
 
   // Fade out letter content scene
   if (letterContentScene) {
@@ -1282,12 +1309,17 @@ function continueFromPoem() {
 function showMysteryGift() {
   if (!mysteryGiftScene) return;
 
+  mysteryGiftScene.classList.remove('fade-out');
   mysteryGiftScene.classList.add('visible');
   mysteryGiftScene.setAttribute('aria-hidden', 'false');
 
   if (mysteryGift) {
     mysteryGift.onclick = openMysteryGift;
     mysteryGift.onkeydown = handleMysteryGiftKeydown;
+  }
+
+  if (mysteryGiftContinue) {
+    mysteryGiftContinue.onclick = continueToPoem;
   }
 }
 
@@ -1327,6 +1359,11 @@ function openMysteryGift() {
 
 function continueToPoem() {
   if (!mysteryGiftScene) return;
+
+  if (!mysteryGiftContinue || !mysteryGiftContinue.classList.contains('visible')) return;
+
+  mysteryGiftContinue.onclick = null;
+  mysteryGiftContinue.classList.remove('visible');
 
   mysteryGiftScene.classList.add('fade-out');
   mysteryGiftScene.setAttribute('aria-hidden', 'true');
@@ -1866,6 +1903,7 @@ function replayJourney() {
 function resetExperienceForReplay() {
   clearExperienceRuntime();
   clearExperienceEffects();
+  if (letterText) letterText.replaceChildren();
 
   document.querySelectorAll('.star, .dust, .heart-particle').forEach(element => {
     element.classList.remove('visible', 'revealed', 'quiet');
@@ -1922,6 +1960,8 @@ function resetExperienceForReplay() {
     birthdayScreen.style.opacity = '';
     birthdayScreen.style.pointerEvents = '';
   }
+  document.body.style.transition = '';
+  document.body.style.background = '';
   if (replayButton) replayButton.classList.remove('visible');
   const replayTitle = document.getElementById('celebrationTitle');
   if (replayTitle) replayTitle.classList.remove('glow');
