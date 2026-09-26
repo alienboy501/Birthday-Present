@@ -1283,13 +1283,13 @@ function showPoem() {
   poemScene.setAttribute('aria-hidden', 'false');
 
   poemScene.querySelectorAll('.poem-line').forEach((line, index) => {
-    line.style.setProperty('--poem-delay', `${250 + index * 170}ms`);
+    line.style.setProperty('--poem-delay', prefersReducedMotion ? '0ms' : `${250 + index * 170}ms`);
   });
 
   if (poemContinue) {
     poemContinue.removeEventListener('click', continueFromPoem);
     poemContinue.addEventListener('click', continueFromPoem, { once: true });
-    trackTimeout(() => poemContinue.classList.add('visible'), 7000);
+    trackTimeout(() => poemContinue.classList.add('visible'), prefersReducedMotion ? 0 : 7000);
   }
 }
 

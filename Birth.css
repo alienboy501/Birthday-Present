@@ -1517,6 +1517,15 @@ body::after {
   animation-delay: 3.5s;
 }
 
+.message-scene:not(.visible) .floating-heart,
+.message-scene:not(.visible) .glowing-flower,
+.letter-scene:not(.visible) .seal-heart,
+.poem-scene:not(.visible) .poem-petal,
+.mystery-gift-scene:not(.visible) .gift-box,
+.final-message:not(.visible) .final-star {
+  animation-play-state: paused;
+}
+
 @keyframes messageLineEntrance {
   from {
     opacity: 0;
@@ -2097,7 +2106,6 @@ body::after {
   opacity: 1 !important;
   transform: translateY(0) scale(1) !important;
   pointer-events: auto;
-  animation: continueIconFloat 3s ease-in-out infinite;
 }
 
 .letter-continue-icon:hover {
@@ -2124,15 +2132,6 @@ body::after {
   line-height: 1;
   z-index: 1;
   pointer-events: none;
-}
-
-@keyframes continueIconFloat {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-3px) scale(1.01);
-  }
 }
 
 @keyframes continueIconPulse {
@@ -3475,6 +3474,139 @@ body::after {
   }
 }
 
+@media (max-width: 768px) {
+  .letter-content-scene {
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem max(0.75rem, env(safe-area-inset-bottom));
+    gap: 0.75rem;
+  }
+
+  .letter-paper {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: min(100%, 36rem);
+    min-height: min(22rem, 52dvh);
+    max-height: min(64dvh, 34rem);
+  }
+
+  .letter-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    padding: clamp(1.1rem, 4vh, 2rem) clamp(1rem, 5vw, 1.75rem);
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .letter-text {
+    font-size: clamp(0.92rem, 3.9vw, 1.02rem);
+    line-height: 1.65;
+  }
+
+  .letter-continue-icon {
+    flex: 0 0 44px;
+    margin-top: 0.75rem;
+  }
+
+  .poem-scene {
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.75rem max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .poem-card {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 40rem);
+    height: min(78dvh, 42rem);
+    max-height: min(78dvh, 42rem);
+    overflow: hidden;
+    padding: clamp(1rem, 3.5vh, 1.6rem) clamp(1rem, 5vw, 1.5rem);
+  }
+
+  .poem-kicker {
+    margin-bottom: 0.4rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  .poem-card h2 {
+    flex: 0 0 auto;
+    margin-bottom: 0.65rem;
+    font-size: clamp(1.45rem, 6vw, 1.9rem);
+    line-height: 1.2;
+  }
+
+  .poem-lines {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0.18rem;
+    overflow-y: auto;
+    padding-inline: 0.1rem;
+    font-size: clamp(0.92rem, 4vw, 1rem);
+    line-height: 1.5;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .poem-line:nth-child(4n + 1):not(:first-child) {
+    margin-top: 0.65rem;
+  }
+
+  .poem-finale {
+    flex: 0 0 auto;
+    margin-top: 0.65rem;
+    font-size: 0.86rem;
+  }
+
+  .poem-continue {
+    flex: 0 0 auto;
+    margin: 0.65rem auto 0;
+    padding: 0.65rem 1rem;
+  }
+
+  .mystery-gift-scene {
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.75rem max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .mystery-gift-content {
+    width: min(100%, 28rem);
+    max-height: calc(100dvh - max(1rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    overflow-y: auto;
+    padding-block: 0.25rem;
+    overscroll-behavior: contain;
+  }
+
+  .mystery-gift {
+    width: min(15rem, 68vw);
+    height: 13.75rem;
+    flex: 0 0 auto;
+  }
+
+  .gift-card {
+    width: min(100%, 24rem);
+    margin-top: 0.25rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .mystery-gift.message-visible ~ .gift-card {
+    animation-name: giftCardRevealMobile;
+  }
+
+  .mystery-gift-continue {
+    flex: 0 0 auto;
+    margin-top: 0.7rem;
+  }
+
+  .final-message {
+    max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    padding: max(1.25rem, env(safe-area-inset-top)) 0.75rem max(1.75rem, env(safe-area-inset-bottom));
+    scroll-padding-block: 1rem max(1.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes giftCardRevealMobile {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* =========================================================
    CELEBRATION PARTICLES
    ========================================================= */
@@ -3688,6 +3820,16 @@ body::after {
 
 @media (prefers-reduced-motion: reduce) {
 
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .star,
   .dust,
   .heart-particle,
@@ -3702,6 +3844,20 @@ body::after {
   .ambient-sparkle,
   .letter-heart,
   .letter-sparkle,
+  .letter-prompt.pulse,
+  .seal-heart,
+  .poem-line,
+  .poem-petal,
+  .poem-continue,
+  .gift-box,
+  .gift-lid,
+  .gift-rose,
+  .gift-card,
+  .mystery-gift-continue,
+  .final-star,
+  .start-button::after,
+  body::after,
+  .celebration-title.glow,
   .celebration-burst,
   .magic-sparkle,
   .celebration-heart,
@@ -3727,5 +3883,19 @@ body::after {
   .celebration-subtitle {
     opacity: 1;
     transform: translateY(0);
+  }
+
+  body::after {
+    opacity: 1;
+  }
+
+  .poem-scene.visible .poem-line {
+    opacity: 1;
+    transform: none;
+  }
+
+  .mystery-gift.message-visible ~ .gift-card {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
