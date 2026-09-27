@@ -3,11 +3,11 @@
    ========================================================= */
 
 const PERFORMANCE = {
-  stars: 70,
-  dust: 70,
+  stars: 56,
+  dust: 40,
   heartOrbit: 38,
   heartRise: 28,
-  spiralPetals: 110,
+  spiralPetals: 80,
   fireworks: 6,
   lanterns: 10,
   butterflies: 8,
@@ -246,8 +246,6 @@ function startCelebration() {
   if (birthdayScreen) {
     birthdayScreen.classList.add('fade-out');
   }
-
-  initPerformanceMonitoring();
 
   trackTimeout(() => {
     if (sessionId !== experienceSessionId) return;
@@ -1289,7 +1287,7 @@ function showPoem() {
   if (poemContinue) {
     poemContinue.removeEventListener('click', continueFromPoem);
     poemContinue.addEventListener('click', continueFromPoem, { once: true });
-    trackTimeout(() => poemContinue.classList.add('visible'), prefersReducedMotion ? 0 : 7000);
+    trackTimeout(() => poemContinue.classList.add('visible'), prefersReducedMotion ? 0 : 1800);
   }
 }
 
@@ -1339,22 +1337,22 @@ function openMysteryGift() {
 
   trackTimeout(() => {
     mysteryGift.classList.add('rose-rising');
-  }, 900);
+  }, 700);
 
   trackTimeout(() => {
     mysteryGift.classList.add('rose-bloomed');
-  }, 1800);
+  }, 1400);
 
   trackTimeout(() => {
     mysteryGift.classList.add('message-visible');
-  }, 3000);
+  }, 2300);
 
   trackTimeout(() => {
     if (mysteryGiftContinue) {
       mysteryGiftContinue.classList.add('visible');
       mysteryGiftContinue.focus();
     }
-  }, 3900);
+  }, 3000);
 }
 
 function continueToPoem() {
@@ -1415,7 +1413,7 @@ function startGrandReveal() {
    ========================================================= */
 
 function createFloatingHearts() {
-  const count = 8;
+  const count = isMobile ? 5 : 8;
   const fragment = document.createDocumentFragment();
   const hearts = [];
 
@@ -1679,7 +1677,7 @@ function createCelebrationBursts() {
 }
 
 function createLightExplosions() {
-  const count = 6;
+  const count = isMobile ? 4 : 6;
   const fragment = document.createDocumentFragment();
   const explosions = [];
 
@@ -1718,7 +1716,7 @@ function createLightExplosions() {
 }
 
 function createMagicSparkles() {
-  const count = 25;
+  const count = isMobile ? 14 : 25;
   const fragment = document.createDocumentFragment();
 
   for (let i = 0; i < count; i++) {
@@ -1753,7 +1751,7 @@ function createMagicSparkles() {
 }
 
 function createFloatingHeartsCelebration() {
-  const count = 12;
+  const count = isMobile ? 8 : 12;
   const fragment = document.createDocumentFragment();
   const hearts = [];
 
@@ -1798,7 +1796,7 @@ function createFloatingHeartsCelebration() {
 }
 
 function createCelebrationBalloons() {
-  const count = 8;
+  const count = isMobile ? 5 : 8;
   const fragment = document.createDocumentFragment();
   const balloons = [];
 
@@ -1893,7 +1891,6 @@ function replayJourney() {
   experienceSessionId += 1;
   const sessionId = experienceSessionId;
 
-  initPerformanceMonitoring();
   trackTimeout(() => {
     if (sessionId !== experienceSessionId) return;
     beginMainSequence(sessionId);

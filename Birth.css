@@ -11,7 +11,7 @@
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 body {
@@ -30,7 +30,7 @@ body {
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-  overflow-x: clip;
+  overflow-x: hidden;
   overflow-y: auto;
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #f5eef5;
@@ -1466,7 +1466,7 @@ body::after {
   opacity: 0;
   text-align: center;
   pointer-events: none;
-  transition: opacity 2s ease, transform 2s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease;
   z-index: 150;
   max-width: 90vw;
   padding: 0 1rem;
@@ -1658,7 +1658,7 @@ body::after {
   opacity: 0;
   text-align: center;
   pointer-events: none;
-  transition: opacity 2.5s ease, transform 2.5s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease;
   z-index: 180;
   max-width: 90vw;
   padding: 0 1rem;
@@ -1945,7 +1945,7 @@ body::after {
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 1.5s ease;
+  transition: opacity 0.6s ease;
   z-index: 200;
   background: rgba(10, 5, 20, 0.95);
   padding: 2rem 1rem;
@@ -1978,7 +1978,7 @@ body::after {
     0 0 80px rgba(180, 140, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   transform: scale(0.9) translateY(30px);
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
   opacity: 0;
   overflow: hidden;
 }
@@ -2281,8 +2281,8 @@ body::after {
   background: radial-gradient(ellipse at center, rgba(52, 29, 48, 0.98), rgba(10, 7, 18, 0.99) 74%);
   opacity: 0;
   pointer-events: none;
-  transform: scale(1.02);
-  transition: opacity 1s ease, transform 1s ease;
+  transform: scale(1);
+  transition: opacity 0.6s ease, transform 0.6s ease;
   z-index: 206;
   overflow-x: hidden;
 }
@@ -2324,6 +2324,7 @@ body::after {
   color: #4d293d;
   text-align: center;
   min-width: 0;
+  animation: poemCardEntrance 0.6s ease both;
 }
 
 .poem-kicker {
@@ -2442,7 +2443,7 @@ body::after {
   pointer-events: none;
   background: radial-gradient(ellipse at center, rgba(38, 20, 48, 0.98), rgba(9, 5, 18, 0.99) 72%);
   transition: opacity 1s ease, transform 1s ease;
-  transform: scale(1.02);
+  transform: scale(1);
   z-index: 205;
   overflow: hidden;
 }
@@ -3274,6 +3275,7 @@ body::after {
 .replay-button {
   margin-top: 1.65rem;
   padding: 0.78rem 1.45rem;
+  min-height: 44px;
   border: 1px solid rgba(255, 205, 194, 0.48);
   border-radius: 999px;
   color: #fff7f1;
@@ -3303,9 +3305,25 @@ body::after {
   50% { opacity: 1; transform: scale(1.25); }
 }
 
+@keyframes poemCardEntrance {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
   .birthday-container {
+    min-height: 100dvh;
     padding: 1rem 0.75rem;
+    padding-block: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-bottom));
+  }
+
+  body { background-attachment: scroll; }
+
+  body::after {
+    width: min(560px, 140vw);
+    height: min(560px, 140vw);
+    filter: none;
+    animation: orbFadeIn 2.5s ease-out 0.4s forwards;
   }
 
   .birthday-screen {
@@ -3327,9 +3345,7 @@ body::after {
     font-size: 0.96rem;
   }
 
-  .poem-card {
-    max-height: calc(100vh - 1.5rem);
-  }
+  .poem-card { max-height: calc(100dvh - 1.5rem); }
 
   .poem-lines {
     gap: 0.25rem;
@@ -3398,8 +3414,10 @@ body::after {
 
   .letter-text {
     font-size: 0.94rem;
-    line-height: 1.65;
+    line-height: 1.72;
   }
+
+  .letter-paragraph { margin-block: 0.55rem; }
 
   .poem-scene,
   .mystery-gift-scene {
@@ -3458,7 +3476,8 @@ body::after {
   }
 
   .poem-lines {
-    font-size: 0.9rem;
+    font-size: 0.94rem;
+    line-height: 1.55;
   }
 
   .mystery-gift-eyebrow {
@@ -3516,8 +3535,8 @@ body::after {
     display: flex;
     flex-direction: column;
     width: min(100%, 40rem);
-    height: min(78dvh, 42rem);
-    max-height: min(78dvh, 42rem);
+    height: min(82dvh, 42rem);
+    max-height: min(82dvh, 42rem);
     overflow: hidden;
     padding: clamp(1rem, 3.5vh, 1.6rem) clamp(1rem, 5vw, 1.5rem);
   }
@@ -3560,6 +3579,7 @@ body::after {
   .poem-continue {
     flex: 0 0 auto;
     margin: 0.65rem auto 0;
+    min-height: 44px;
     padding: 0.65rem 1rem;
   }
 
@@ -3594,12 +3614,34 @@ body::after {
   .mystery-gift-continue {
     flex: 0 0 auto;
     margin-top: 0.7rem;
+    min-height: 44px;
   }
 
   .final-message {
     max-height: calc(100dvh - max(2rem, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
     padding: max(1.25rem, env(safe-area-inset-top)) 0.75rem max(1.75rem, env(safe-area-inset-bottom));
     scroll-padding-block: 1rem max(1.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .star,
+  .dust,
+  .heart-particle,
+  .poem-petal,
+  .final-star,
+  .gift-box,
+  .letter-continue-icon::before {
+    animation: none !important;
   }
 }
 
